@@ -31,9 +31,7 @@ The current directory structure is as follows:
 ```
 ciBulletin/
 ├── client/             # React frontend application
-├── public/             # Public assets and static files
 ├── server/             # Express backend server
-├── src/                # Shared source code and utilities
 ├── .gitignore          # Specifies files to ignore in Git
 ├── README.md           # Project documentation
 ├── package-lock.json   # Dependency tree lock file

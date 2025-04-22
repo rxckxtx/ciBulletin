@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "MERN stack application for ciBulletin",
   "main": "server/server.js",
+  "type": "module",
   "scripts": {
     "start": "node server/server.js",
     "server": "nodemon server/server.js",
