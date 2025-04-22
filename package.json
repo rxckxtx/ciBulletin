@@ -9,12 +9,10 @@
     "server": "nodemon server/server.js",
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
-    "build": "cd client && npm run build"
+    "install-all": "npm install && cd client && npm install"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "concurrently": "^8.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
@@ -23,6 +21,7 @@
     "mongoose": "^8.13.2"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "nodemon": "^2.0.22"
   },
   "repository": {
