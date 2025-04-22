@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
+import Navigation from './components/Navigation/Navigation';
 import Billboard from './components/Billboard/Billboard';
 import Forum from './components/Forum/Forum';
 import './App.css';
@@ -8,13 +9,9 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <nav className="navbar">
-          {/* Add navigation links here */}
-        </nav>
-        <Routes>
-          <Route path="/" element={<Billboard />} />
-          <Route path="/forum" element={<Forum />} />
-        </Routes>
+        <Navigation />
+        <Billboard />
+        {/* Other components */}
       </div>
     </Router>
   );

@@ -13,8 +13,8 @@ code {
 }
 
 @font-face {
-  font-family: 'MyFont';
-  src: local('MyFont'), url(./fonts/ArtDystopia.otf)format('ArtDystopia');
+  font-family: 'ArtDsytopia';
+  src: local('ArtDsytopia'), url(./fonts/ArtDystopia.otf)format('opentype');
   /* other formats include: 'woff2', 'truetype, 'opentype',
                             'embedded-opentype', and 'svg' */
 }
