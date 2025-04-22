@@ -5,9 +5,10 @@ const path = require('path');
 require('dotenv').config();
 
 // Import routes
-const announcementRoutes = require('./routes/announcements');
-const eventRoutes = require('./routes/events');
 const userRoutes = require('./routes/users');
+//const announcementRoutes = require('./routes/announcements');
+//const eventRoutes = require('./routes/events');
+
 
 // Initialize express app
 const app = express();
@@ -18,15 +19,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// MongoDB Connection Test (Delete later)
+mongoose.connection.once('open', () => {
+    console.log('Connected to MongoDB! N0ICE');
+  });  
+
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true})
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
+//app.use('/api/announcements', announcementRoutes);
+//app.use('/api/events', eventRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
@@ -41,3 +47,7 @@ if (process.env.NODE_ENV === 'production') {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+app.get('/', (req, res) => {
+    res.send('&#128526 ciBulletin backend is running!');
+  });

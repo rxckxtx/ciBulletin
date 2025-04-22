@@ -18,17 +18,18 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true
+    // will be hashed using bcrypt
   },
   role: {
     type: String,
-    enum: ['user', 'admin', 'moderator'],
-    default: 'user'
+    enum: ['student', 'admin', 'moderator'],
+    default: 'student'
   },
   createdAt: {
     type: Date,
     default: Date.now
-  }
-});
+  }, 
+}, { timestamps: true });
 
 // Hash password before saving
 UserSchema.pre('save', async function(next) {
@@ -44,8 +45,8 @@ UserSchema.pre('save', async function(next) {
 });
 
 // Method to compare passwords
-UserSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+UserSchema.methods.comparePassword = async function(recordPassword) {
+  return await bcrypt.compare(recordPassword, this.password);
 };
 
 module.exports = mongoose.model('User', UserSchema);
