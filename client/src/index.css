@@ -12,6 +12,7 @@ code {
     monospace;
 }
 
+/* remove before deployment, don't have the liscence for this font */
 @font-face {
   font-family: 'ArtDsytopia';
   src: local('ArtDsytopia'), url(./fonts/ArtDystopia.otf)format('opentype');

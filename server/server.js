@@ -6,8 +6,8 @@ require('dotenv').config();
 
 // Import routes
 const userRoutes = require('./routes/users');
-//const announcementRoutes = require('./routes/announcements');
-//const eventRoutes = require('./routes/events');
+const announcementRoutes = require('./routes/announcements');
+const eventRoutes = require('./routes/events');
 
 
 // Initialize express app
@@ -31,8 +31,8 @@ mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopo
 
 // API Routes
 app.use('/api/users', userRoutes);
-//app.use('/api/announcements', announcementRoutes);
-//app.use('/api/events', eventRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/events', eventRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
