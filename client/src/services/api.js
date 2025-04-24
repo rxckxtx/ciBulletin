@@ -74,4 +74,123 @@ export const checkDailyEventLimit = async () => {
   }
 };
 
+// Forum endpoints
+export const fetchForums = async () => {
+  const response = await api.get('/api/forums');
+  return response.data;
+};
+
+export const fetchForumById = async (id) => {
+  const response = await api.get(`/api/forums/${id}`);
+  return response.data;
+};
+
+export const createForum = async (forumData) => {
+  const response = await api.post('/api/forums', forumData);
+  return response.data;
+};
+
+export const updateForum = async (id, forumData) => {
+  const response = await api.put(`/api/forums/${id}`, forumData);
+  return response.data;
+};
+
+export const deleteForum = async (id) => {
+  const response = await api.delete(`/api/forums/${id}`);
+  return response.data;
+};
+
+// Topic endpoints
+export const fetchTopicsByForum = async (forumId) => {
+  const response = await api.get(`/api/topics/forum/${forumId}`);
+  return response.data;
+};
+
+export const fetchTopicById = async (id) => {
+  const response = await api.get(`/api/topics/${id}`);
+  return response.data;
+};
+
+export const createTopic = async (topicData) => {
+  const response = await api.post('/api/topics', topicData);
+  return response.data;
+};
+
+export const updateTopic = async (id, topicData) => {
+  const response = await api.put(`/api/topics/${id}`, topicData);
+  return response.data;
+};
+
+export const deleteTopic = async (id) => {
+  const response = await api.delete(`/api/topics/${id}`);
+  return response.data;
+};
+
+export const togglePinTopic = async (id) => {
+  const response = await api.patch(`/api/topics/${id}/pin`);
+  return response.data;
+};
+
+export const toggleLockTopic = async (id) => {
+  const response = await api.patch(`/api/topics/${id}/lock`);
+  return response.data;
+};
+
+// Post endpoints
+export const fetchPostsByTopic = async (topicId) => {
+  const response = await api.get(`/api/posts/topic/${topicId}`);
+  return response.data;
+};
+
+export const createPost = async (postData) => {
+  const response = await api.post('/api/posts', postData);
+  return response.data;
+};
+
+export const updatePost = async (id, postData) => {
+  const response = await api.put(`/api/posts/${id}`, postData);
+  return response.data;
+};
+
+export const deletePost = async (id) => {
+  const response = await api.delete(`/api/posts/${id}`);
+  return response.data;
+};
+
+export const toggleLikePost = async (id) => {
+  const response = await api.patch(`/api/posts/${id}/like`);
+  return response.data;
+};
+
+export const fetchThreads = async (category = null) => {
+  const url = category ? `/api/forum?category=${category}` : '/api/forum';
+  const response = await api.get(url);
+  return response.data;
+};
+
+export const fetchThreadById = async (id) => {
+  const response = await api.get(`/api/forum/${id}`);
+  return response.data;
+};
+
+export const createThread = async (threadData) => {
+  const response = await api.post('/api/forum', threadData);
+  return response.data;
+};
+
+export const addPost = async (threadId, postData) => {
+  const response = await api.post(`/api/forum/${threadId}/posts`, postData);
+  return response.data;
+};
+
+export const deleteThread = async (threadId) => {
+  const response = await api.delete(`/api/forum/${threadId}`);
+  return response.data;
+};
+
+export const deleteForumPost = async (threadId, postId) => {
+  const response = await api.delete(`/api/forum/${threadId}/posts/${postId}`);
+  return response.data;
+};
+
 export default api;

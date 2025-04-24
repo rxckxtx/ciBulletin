@@ -22,6 +22,6 @@ router.get('/test', async (req, res) => {
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-router.get('/profile', auth, getUserProfile);
+router.get('/profile', auth, getUserProfile); // Protected route
 
 module.exports = router;

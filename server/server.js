@@ -4,13 +4,6 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-// Import routes
-const userRoutes = require('./routes/users');
-const announcementRoutes = require('./routes/announcements');
-const eventRoutes = require('./routes/events');
-const authRoutes = require('./routes/auth');  
-
-
 // Initialize express app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,10 +24,15 @@ mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopo
   .catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
+// Define routes
+app.use('/api/users', require('./routes/users'));
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/events', require('./routes/events'));
+app.use('/api/forums', require('./routes/forums'));
+app.use('/api/topics', require('./routes/topics'));
+app.use('/api/posts', require('./routes/posts'));
+app.use('/api/forum', require('./routes/forum'));
 
 // Create uploads directory if it doesn't exist
 const fs = require('fs');
