@@ -20,7 +20,7 @@ ciBulletin operates on a full-stack JavaScript framework:
 - **Frontend**: Developed using React, specifically for its fast user interface.
 - **Backend**: Powered by Node.js and Express, handling API requests and server-side logic.
 - **Database**: Utilizes MongoDB.
-- **Real-Time Communication**: Incorporates WebSocket technology to enable instant updates across clients.
+- **Real-Time Communication**: Incorporates WebSocket technology to enable communication amoungst users. (NOT A CORE FEATURE BUT WILL TRY TO IMPLEMENT)
 
 ---
 
@@ -70,6 +70,7 @@ The application will be accessible at `http://localhost:3000`.
 ## 📚 Framework Documentation
 
 - [React Documentation](https://reactjs.org/)
+- [React Router Documentation](https://reactrouter.com/start/framework/routing)
 - [Node.js Documentation](https://nodejs.org/en/docs/)
 - [Express Documentation](https://expressjs.com/)
 - [MongoDB Documentation](https://docs.mongodb.com/)

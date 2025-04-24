@@ -1,10 +1,11 @@
 import React from 'react';
+import './Forum.css';
 
 const Forum = () => {
   return (
-    <div className="forum-section">
+    <div className="forum">
       <h2>Discussion Forum</h2>
-      {/* Add forum content here */}
+      <p>Forum functionality will be implemented here.</p>
     </div>
   );
 };

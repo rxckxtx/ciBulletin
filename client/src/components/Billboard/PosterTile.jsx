@@ -2,52 +2,50 @@ import React from 'react';
 import './PosterTile.css';
 
 const PosterTile = ({ announcement }) => {
-  const { type, theme, size, urgent } = announcement;
-
-  const tileStyle = {
-    gridColumn: `span ${size.width}`,
-    gridRow: `span ${size.height}`,
-  };
-
-  const getTileClasses = () => {
-    const classes = ['poster-tile'];
-    if (type) classes.push(`poster-type-${type}`);
-    if (theme) classes.push(`theme-${theme}`);
-    if (urgent) classes.push('poster-type-urgent');
-    return classes.join(' ');
-  };
-
-  const renderIcon = () => {
-    return <div className={`poster-icon poster-icon-${type}`} />;
-  };
-
-  const renderContent = () => {
-    if (announcement.image) {
-      return (
+  // Determine the CSS classes based on the announcement properties
+  const tileClasses = `poster-tile ${announcement.theme || 'asi'} ${announcement.urgent ? 'urgent' : ''}`;
+  
+  // Format the date if it exists
+  const formattedDate = announcement.date ? new Date(announcement.date).toLocaleDateString() : '';
+  
+  return (
+    <div 
+      className={tileClasses}
+      style={{
+        gridColumn: `span ${announcement.size?.width || 1}`,
+        gridRow: `span ${announcement.size?.height || 1}`
+      }}
+    >
+      {announcement.image && (
         <div className="poster-image">
           <img src={announcement.image} alt={announcement.title} />
         </div>
-      );
-    }
-    return (
-      <div className={`poster-default poster-type-${type}`}>
-        <div className="poster-default-content">
-          {renderIcon()}
-          <h3>{announcement.title}</h3>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className={getTileClasses()} style={tileStyle}>
-      {renderContent()}
-      <div className="poster-info">
-        <div className="poster-metadata">
-          <p><strong>Where:</strong> {announcement.location}</p>
-          <p><strong>When:</strong> {announcement.date}</p>
-          <p><strong>By:</strong> {announcement.group}</p>
-        </div>
+      )}
+      
+      <div className="poster-content">
+        <h3 className="poster-title">{announcement.title}</h3>
+        
+        {announcement.location && (
+          <div className="poster-location">
+            <span className="location-icon">📍</span> {announcement.location}
+          </div>
+        )}
+        
+        {formattedDate && (
+          <div className="poster-date">
+            <span className="date-icon">📅</span> {formattedDate}
+          </div>
+        )}
+        
+        {announcement.group && (
+          <div className="poster-group">
+            <span className="group-icon">👥</span> {announcement.group}
+          </div>
+        )}
+        
+        {announcement.type && (
+          <div className="poster-badge">{announcement.type}</div>
+        )}
       </div>
     </div>
   );

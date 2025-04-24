@@ -3,34 +3,29 @@ const mongoose = require('mongoose');
 const AnnouncementSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
-    trim: true
+    required: true
+  },
+  location: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  group: {
+    type: String,
+    required: true
   },
   type: {
     type: String,
-    enum: ['event', 'club', 'academic', 'sports', 'urgent'],
-    required: true
+    enum: ['event', 'club', 'academic', 'sports'],
+    default: 'event'
   },
   theme: {
     type: String,
     enum: ['asi', 'stem', 'arts', 'business', 'cs'],
-    required: false
-  },
-  location: {
-    type: String,
-    required: false
-  },
-  date: {
-    type: Date,
-    required: false
-  },
-  group: {
-    type: String,
-    required: false
-  },
-  image: {
-    type: String,
-    required: false
+    default: 'asi'
   },
   urgent: {
     type: Boolean,
@@ -46,16 +41,16 @@ const AnnouncementSchema = new mongoose.Schema({
       default: 1
     }
   },
-  createdBy: {
+  image: {
+    type: String,
+    default: null
+  },
+  user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',    // Self Reference
-    required: false
+    ref: 'User',
+    required: true
   },
   createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
     type: Date,
     default: Date.now
   }

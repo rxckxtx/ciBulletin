@@ -3,46 +3,54 @@ const mongoose = require('mongoose');
 const EventSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
-    trim: true
-  },
-  description: {
-    type: String,
     required: true
   },
   location: {
     type: String,
     required: true
   },
-  startDate: {
+  date: {
     type: Date,
     required: true
   },
-  endDate: {
-    type: Date,
-    required: true
-  },
-  organizer: {
+  group: {
     type: String,
     required: true
+  },
+  type: {
+    type: String,
+    enum: ['event', 'club', 'academic', 'sports'],
+    default: 'event'
+  },
+  theme: {
+    type: String,
+    enum: ['asi', 'stem', 'arts', 'business', 'cs'],
+    default: 'asi'
+  },
+  urgent: {
+    type: Boolean,
+    default: false
+  },
+  size: {
+    width: {
+      type: Number,
+      default: 1
+    },
+    height: {
+      type: Number,
+      default: 1
+    }
   },
   image: {
-    type: String
-  },
-  category: {
     type: String,
-    enum: ['academic', 'social', 'club', 'sports', 'other'],
+    default: null
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
   createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
     type: Date,
     default: Date.now
   }

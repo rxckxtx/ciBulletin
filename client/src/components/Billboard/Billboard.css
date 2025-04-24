@@ -241,3 +241,147 @@
   font-size: 2.5rem;
   opacity: 0.8;
 }
+
+.billboard {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.billboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.add-event-button {
+  background-color: #ce1c40;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-event-button:hover {
+  background-color: #b01835;
+}
+
+.billboard-header h2 {
+  color: #333;
+  margin: 0;
+}
+
+.add-event-button {
+  background-color: #ce1c40;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: tileAppear 0.5s ease-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: inline-block; /* Ensure it's visible as a block element */
+}
+
+.add-event-button:hover {
+  background-color: #b01835;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.announcement-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.add-event-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.poster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error-message {
+  color: #e74c3c;
+  text-align: center;
+  padding: 20px;
+  background-color: #fdeaea;
+  border-radius: 4px;
+}
+
+.no-announcements {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  grid-column: 1 / -1;
+}
+
+.announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.announcement-card {
+  background: #f9f9f9;
+  border-left: 4px solid #ce1c40;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.announcement-card h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.hero-actions {
+  margin-top: 20px;
+}
+
+.add-event-button {
+  background-color: white;
+  color: #ce1c40;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-event-button:hover {
+  background-color: #f8f8f8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.limit-message {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 10px 15px;
+  border-radius: 4px;
+  color: #ce1c40;
+  font-size: 0.9rem;
+  display: inline-block;
+}

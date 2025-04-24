@@ -3,19 +3,19 @@ const router = express.Router();
 const announcementController = require('../controllers/announcementController');
 const auth = require('../middleware/auth');
 
-// Get all announcements
+// GET all announcements
 router.get('/', announcementController.getAnnouncements);
 
-// Get announcement by ID
-router.get('/:id', announcementController.getAnnouncementById);
-
-// Create new announcement (protected route)
+// POST create new announcement
 router.post('/', auth, announcementController.createAnnouncement);
 
-// Update announcement (protected route)
+// GET single announcement
+router.get('/:id', announcementController.getAnnouncementById);
+
+// PUT update announcement
 router.put('/:id', auth, announcementController.updateAnnouncement);
 
-// Delete announcement (protected route)
+// DELETE announcement
 router.delete('/:id', auth, announcementController.deleteAnnouncement);
 
 module.exports = router;

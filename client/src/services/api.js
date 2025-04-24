@@ -1,103 +1,76 @@
 import axios from 'axios';
 
-// Base URL for API requests
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-// Create axios instance with base configuration
+// Create axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000'
 });
 
-// Add auth token to requests if available
+// Add auth token to requests
 api.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers['x-auth-token'] = token;
     }
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
 
-// Announcements API
-export const fetchAnnouncements = async () => {
-  try {
-    const response = await api.get('/announcements');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching announcements:', error);
-    throw error;
-  }
-};
-
-// Events API
-export const fetchEvents = async () => {
-  try {
-    const response = await api.get('/events');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching events:', error);
-    throw error;
-  }
-};
-
-// Add announcement
-export const addAnnouncement = async (announcementData) => {
-  try {
-    const response = await api.post('/announcements', announcementData);
-    return response.data;
-  } catch (error) {
-    console.error('Error adding announcement:', error);
-    throw error;
-  }
-};
-
-// Update announcement
-export const updateAnnouncement = async (id, announcementData) => {
-  try {
-    const response = await api.put(`/announcements/${id}`, announcementData);
-    return response.data;
-  } catch (error) {
-    console.error('Error updating announcement:', error);
-    throw error;
-  }
-};
-
-// Delete announcement
-export const deleteAnnouncement = async (id) => {
-  try {
-    const response = await api.delete(`/announcements/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error deleting announcement:', error);
-    throw error;
-  }
-};
-
-// Auth API
+// Auth endpoints
 export const login = async (credentials) => {
-  try {
-    const response = await api.post('/users/login', credentials);
-    return response.data;
-  } catch (error) {
-    console.error('Error logging in:', error);
-    throw error;
-  }
+  const response = await api.post('/api/auth/login', credentials);
+  return response.data;
 };
 
 export const register = async (userData) => {
+  const response = await api.post('/api/auth/register', userData);
+  return response.data;
+};
+
+// Announcements endpoints
+export const fetchAnnouncements = async () => {
+  const response = await api.get('/api/announcements');
+  return response.data;
+};
+
+export const fetchAnnouncementById = async (id) => {
+  const response = await api.get(`/api/announcements/${id}`);
+  return response.data;
+};
+
+// Events endpoints
+export const fetchEvents = async () => {
+  const response = await api.get('/api/events');
+  return response.data;
+};
+
+// Create a new event with image upload support
+export const createEvent = async (eventData) => {
   try {
-    const response = await api.post('/users/register', userData);
+    console.log('Sending event data:', eventData);
+    const response = await api.post('/api/events', eventData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   } catch (error) {
-    console.error('Error registering user:', error);
-    throw error;
+    console.error('API error:', error);
+    throw error.response?.data || { message: 'Failed to create event' };
+  }
+};
+
+export const checkDailyEventLimit = async () => {
+  try {
+    const response = await api.get('/api/events/check-limit');
+    return response.data;
+  } catch (error) {
+    console.error('Error checking event limit:', error);
+    // Return a default value instead of throwing an error
+    return { limitReached: false };
   }
 };
 

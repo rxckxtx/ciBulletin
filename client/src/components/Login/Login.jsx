@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
+import { login } from '../../services/api';
 import './Login.css';
 
 // Login component using forms, will link tutorials used in documentation
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const { email, password } = formData;
 
@@ -14,12 +17,25 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Just testing for now
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // We are just logging the form data for now (DO NOT DEPLOY UNTIL THIS IS FIXED IMPORTANT!)
-    console.log('Login attempt:', { email, password });
-    // TODO: Add actual authentication logic here
+  const handleSubmit = async (entry) => {
+    entry.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Testing without backend, uncomment this:
+      // localStorage.setItem('token', 'test-token');
+      // onLoginSuccess();
+      
+      // Backend integrated testing:
+      const userData = await login({ email, password });
+      localStorage.setItem('token', userData.token);
+      onLoginSuccess();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,6 +43,8 @@ const Login = () => {
       <div className="login-card">
         <h2 className="login-title">ciBulletin</h2>
         <p className="login-subtitle">Sign in to your account</p>
+        
+        {error && <div className="login-error">{error}</div>}
         
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
@@ -55,8 +73,8 @@ const Login = () => {
             />
           </div>
           
-          <button type="submit" className="login-button">
-            Sign In
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
         

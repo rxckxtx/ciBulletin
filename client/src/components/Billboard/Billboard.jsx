@@ -1,115 +1,107 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import './Billboard.css';
 import PosterTile from './PosterTile';
-import { fetchAnnouncements, fetchEvents } from '../../services/api';
+import EventForm from './EventForm';
+import { fetchAnnouncements, createEvent, checkDailyEventLimit } from '../../services/api';
+import './Billboard.css';
 
 const Billboard = () => {
-  // State for data from backend
   const [announcements, setAnnouncements] = useState([]);
-  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [canAddEvent, setCanAddEvent] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadAnnouncements = async () => {
       try {
-        const announcementsData = await fetchAnnouncements();
-        const eventsData = await fetchEvents();
+        setLoading(true);
+        const data = await fetchAnnouncements();
+        setAnnouncements(data);
         
-        setAnnouncements(announcementsData);
-        setEvents(eventsData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        // Fallback to mock data if API fails
-        setAnnouncements([
-          {
-            id: 1,
-            title: 'Welcome Back Students!',
-            image: require('../../misc/del.png'),
-            location: 'Student Union',
-            date: '2024-01-20',
-            group: 'Student Life',
-            type: 'event',
-            theme: 'asi',
-            size: { width: 2, height: 2 },
-            urgent: false
-          },
-          {
-            id: 2,
-            title: 'STEM Research Symposium',
-            location: 'Science Building',
-            date: '2024-01-25',
-            group: 'Biology Department',
-            type: 'academic',
-            theme: 'stem',
-            size: { width: 1, height: 2 },
-            urgent: true
-          }
-        ]);
-        setEvents([
-          { id: 1, title: 'Basketball Game', location: 'Main Gym', date: '2024-01-20' },
-          { id: 2, title: 'Science Fair', location: 'Science Building', date: '2024-01-25' },
-        ]);
+        // Check if user can add more events today
+        const limitCheck = await checkDailyEventLimit();
+        setCanAddEvent(limitCheck.canAddMore);
+      } catch (err) {
+        console.error('Error loading announcements:', err);
+        setError('Failed to load announcements. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
+    loadAnnouncements();
   }, []);
 
+  const handleAddEvent = () => {
+    setShowEventForm(true);
+  };
+
+  const handleEventSubmit = async (eventData) => {
+    try {
+      const newEvent = await createEvent(eventData);
+      setAnnouncements([newEvent, ...announcements]);
+      setShowEventForm(false);
+      
+      // Update the daily limit status
+      const limitCheck = await checkDailyEventLimit();
+      setCanAddEvent(limitCheck.canAddMore);
+    } catch (err) {
+      console.error('Error creating event:', err);
+      throw err; // Let the form component handle the error
+    }
+  };
+
   return (
-    <div className="home-container">
-      <section className="hero-section">
-        <h1>Welcome to ciBULLETIN</h1>
-        <p>Stay updated with the latest announcements and events</p>
-      </section>
+    <div className="billboard">
+      <div className="billboard-header">
+        <h2>Campus Bulletin Board</h2>
+        <button 
+          className="add-event-button" 
+          onClick={handleAddEvent}
+          style={{ 
+            backgroundColor: '#ce1c40',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            padding: '8px 16px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'block' // Force display
+          }}
+        >
+          + Add Event
+        </button>
+      </div>
 
-      <section className="announcements-section">
-        <h2></h2>
-        {loading ? (
-          <div className="loading-spinner">Loading announcements...</div>
-        ) : (
-          <div className="poster-grid">
-            {announcements.map(announcement => (
+      {loading ? (
+        <div className="loading-spinner">Loading...</div>
+      ) : error ? (
+        <div className="error-message">{error}</div>
+      ) : (
+        <div className="poster-grid">
+          {announcements.length > 0 ? (
+            announcements.map(announcement => (
               <PosterTile 
-                key={announcement.id} 
-                announcement={announcement}
+                key={announcement._id} 
+                announcement={announcement} 
               />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Rest of the component remains the same */}
-      <section className="map-section">
-        <h2>Event Locations</h2>
-        <div className="map-placeholder">
-          {/* Map component will be added here */}
-          <p>Interactive map coming soon!</p>
-          <div className="events-list">
-            {loading ? (
-              <p>Loading events...</p>
-            ) : (
-              events.map(event => (
-                <div key={event.id} className="event-card">
-                  <h3>{event.title}</h3>
-                  <p>Location: {event.location}</p>
-                  <p>Date: {event.date}</p>
-                </div>
-              ))
-            )}
-          </div>
+            ))
+          ) : (
+            <div className="no-announcements">
+              <p>No announcements to display.</p>
+              <p>Be the first to add an event!</p>
+            </div>
+          )}
         </div>
-      </section>
+      )}
 
-      <section className="forum-preview">
-        <h2>Recent Discussions</h2>
-        <div className="forum-preview-content">
-          <p>Join the conversation in our student forum!</p>
-          <Link to="/forum" className="forum-link">Go to Forum →</Link>
-        </div>
-      </section>
+      {showEventForm && (
+        <EventForm 
+          onSubmit={handleEventSubmit} 
+          onCancel={() => setShowEventForm(false)} 
+        />
+      )}
     </div>
   );
 };

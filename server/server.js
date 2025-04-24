@@ -8,6 +8,7 @@ require('dotenv').config();
 const userRoutes = require('./routes/users');
 const announcementRoutes = require('./routes/announcements');
 const eventRoutes = require('./routes/events');
+const authRoutes = require('./routes/auth');  
 
 
 // Initialize express app
@@ -31,8 +32,20 @@ mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true, useUnifiedTopo
 
 // API Routes
 app.use('/api/users', userRoutes);
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/events', eventRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/events', require('./routes/events'));
+
+// Create uploads directory if it doesn't exist
+const fs = require('fs');
+const uploadsDir = path.join(__dirname, 'uploads/posters');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
