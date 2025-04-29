@@ -8,7 +8,7 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 // Initialize express app
 const app = express();

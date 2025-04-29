@@ -17,7 +17,7 @@ const registerUser = async (req, res) => {
 
   // Create new user
   const newUser = new User({
-    username,
+    name: username, // Use username as name since the model has 'name' field
     email,
     password: hashedPassword,
   });
@@ -34,7 +34,7 @@ const registerUser = async (req, res) => {
 
     res.status(201).json({
       _id: newUser._id,
-      username: newUser.username,
+      username: newUser.name, // Return name as username for client consistency
       email: newUser.email,
       token,
     });
@@ -61,14 +61,14 @@ const loginUser = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id },
+      { user: { id: user._id, username: user.name } }, // Include user object with id and name as username
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
     res.json({
       _id: user._id,
-      username: user.username,
+      username: user.name, // Return name as username for client consistency
       email: user.email,
       role: user.role,
       token,
@@ -93,4 +93,34 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+const refreshToken = async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ message: 'Token is required' });
+  }
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Validate the decoded payload structure
+    if (!decoded.user || !decoded.user.id || !decoded.user.username) {
+      return res.status(400).json({ message: 'Invalid token payload' });
+    }
+
+    // Generate a new token
+    const newToken = jwt.sign(
+      { user: { id: decoded.user.id, username: decoded.user.username } },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.json({ token: newToken });
+  } catch (err) {
+    console.error('Error refreshing token:', err);
+    res.status(401).json({ message: 'Invalid or expired token' });
+  }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, refreshToken };

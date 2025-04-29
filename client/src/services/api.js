@@ -171,14 +171,37 @@ export const toggleLikePost = async (id) => {
 };
 
 export const fetchThreads = async (category = null) => {
-  const url = category ? `/api/forum?category=${category}` : '/api/forum';
-  const response = await api.get(url);
-  return response.data;
+  try {
+    const url = category
+      ? `/api/forum?category=${category}`
+      : '/api/forum';
+
+    // Use the axios instance instead of fetch
+    const response = await api.get(url);
+    console.log('Threads API response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error in fetchThreads:', error);
+    throw error;
+  }
 };
 
-export const fetchThreadById = async (id) => {
-  const response = await api.get(`/api/forum/${id}`);
-  return response.data;
+export const fetchThreadById = async (id, isRefresh = false) => {
+  try {
+    // Check if id is valid before making the API call
+    if (!id) {
+      throw new Error('Invalid thread ID');
+    }
+
+    // Add a header to indicate if this is a refresh request
+    const headers = isRefresh ? { 'x-refresh-request': 'true' } : {};
+
+    const response = await api.get(`/api/forum/${id}`, { headers });
+    return response.data;
+  } catch (error) {
+    console.error('Error in fetchThreadById:', error);
+    throw error;
+  }
 };
 
 export const createThread = async (threadData) => {

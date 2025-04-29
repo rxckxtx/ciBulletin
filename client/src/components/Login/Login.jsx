@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { login } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 // Login component using forms, will link tutorials used in documentation
@@ -10,6 +11,7 @@ const Login = ({ onLoginSuccess }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const { email, password } = formData;
 
@@ -79,7 +81,7 @@ const Login = ({ onLoginSuccess }) => {
         </form>
         
         <div className="login-footer">
-          <p>Don't have an account? <span className="login-link">Register</span></p>
+          <p>Don't have an account? <span className="login-link" onClick={() => navigate('/register')}>Register</span></p>
         </div>
       </div>
     </div>
