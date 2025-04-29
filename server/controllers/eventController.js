@@ -23,11 +23,11 @@ const upload = multer({
     if (!file) {
       return cb(null, true);
     }
-    
+
     const filetypes = /jpeg|jpg|png/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     }
@@ -45,14 +45,14 @@ exports.createEvent = async (req, res) => {
       console.error('Other error:', err);
       return res.status(400).json({ message: err.message });
     }
-    
+
     try {
       console.log('Request body:', req.body);
       console.log('User object:', req.user); // Log the user object to debug
-      
+
       const { title, location, date, group, type, theme, urgent } = req.body;
       let size = { width: 1, height: 1 };
-      
+
       if (req.body.size) {
         try {
           size = JSON.parse(req.body.size);
@@ -60,11 +60,11 @@ exports.createEvent = async (req, res) => {
           console.error('Error parsing size:', e);
         }
       }
-      
+
       // For development purposes, use a default user ID if not authenticated
       // In production, you should require authentication
       const userId = req.user?.id || '64f5b7d5e85b0e1b3c3f5b7d'; // Replace with a valid ObjectId from your database
-      
+
       const newEvent = new Event({
         title,
         location,
@@ -77,7 +77,7 @@ exports.createEvent = async (req, res) => {
         image: req.file ? `/uploads/posters/${req.file.filename}` : null,
         user: userId
       });
-      
+
       const savedEvent = await newEvent.save();
       res.status(201).json(savedEvent);
     } catch (error) {
@@ -90,8 +90,30 @@ exports.createEvent = async (req, res) => {
 // Get all events
 exports.getEvents = async (req, res) => {
   try {
-    const events = await Event.find().sort({ createdAt: -1 });
-    res.json(events);
+    const { showArchived } = req.query;
+    const currentDate = new Date();
+
+    // Base query
+    let query = {};
+
+    // If not showing archived, only show current and future events
+    if (showArchived !== 'true') {
+      query.date = { $gte: currentDate };
+    }
+
+    // Get events with user information
+    const events = await Event.find(query)
+      .populate('user', 'name role') // Populate user info
+      .sort({ date: 1 }) // Sort by date ascending
+      .lean(); // Convert to plain JS objects
+
+    // Add an "isArchived" flag to each event
+    const eventsWithArchiveFlag = events.map(event => ({
+      ...event,
+      isArchived: new Date(event.date) < currentDate
+    }));
+
+    res.json(eventsWithArchiveFlag);
   } catch (error) {
     console.error('Error fetching events:', error);
     res.status(500).json({ message: 'Server error' });
@@ -102,11 +124,11 @@ exports.getEvents = async (req, res) => {
 exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    
+
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    
+
     res.json(event);
   } catch (error) {
     console.error('Error fetching event:', error);
@@ -122,11 +144,11 @@ exports.updateEvent = async (req, res) => {
       { ...req.body, updatedAt: Date.now() },
       { new: true }
     );
-    
+
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    
+
     res.json(event);
   } catch (error) {
     console.error('Error updating event:', error);
@@ -137,13 +159,20 @@ exports.updateEvent = async (req, res) => {
 // Delete event
 exports.deleteEvent = async (req, res) => {
   try {
-    const event = await Event.findByIdAndDelete(req.params.id);
-    
+    // First find the event to check ownership
+    const event = await Event.findById(req.params.id);
+
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    
-    res.json({ message: 'Event deleted successfully' });
+
+    // Check if user is the event creator or an admin
+    if (req.user && (event.user.toString() === req.user.id || req.user.role === 'admin')) {
+      await Event.findByIdAndDelete(req.params.id);
+      return res.json({ message: 'Event deleted successfully' });
+    } else {
+      return res.status(403).json({ message: 'Not authorized to delete this event' });
+    }
   } catch (error) {
     console.error('Error deleting event:', error);
     res.status(500).json({ message: 'Server error' });
@@ -157,20 +186,20 @@ exports.checkDailyEventLimit = async (req, res) => {
     if (!req.user) {
       return res.json({ limitReached: false, message: 'User not authenticated' });
     }
-    
+
     // Get today's date (start of day)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Count events created by this user today
     const count = await Event.countDocuments({
       user: req.user.id,
       createdAt: { $gte: today }
     });
-    
+
     // Check if limit reached (e.g., 5 events per day)
     const limitReached = count >= 5;
-    
+
     res.json({
       limitReached,
       count,
@@ -187,10 +216,10 @@ exports.checkDailyEventLimit = async (req, res) => {
 exports.getUpcomingEvents = async (req, res) => {
   try {
     const currentDate = new Date();
-    const events = await Event.find({ 
-      startDate: { $gte: currentDate } 
+    const events = await Event.find({
+      startDate: { $gte: currentDate }
     }).sort({ startDate: 1 });
-    
+
     res.json(events);
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
@@ -202,10 +231,10 @@ exports.getUpcomingEvents = async (req, res) => {
 exports.getPastEvents = async (req, res) => {
   try {
     const currentDate = new Date();
-    const events = await Event.find({ 
-      endDate: { $lt: currentDate } 
+    const events = await Event.find({
+      endDate: { $lt: currentDate }
     }).sort({ startDate: -1 });
-    
+
     res.json(events);
   } catch (error) {
     console.error('Error fetching past events:', error);

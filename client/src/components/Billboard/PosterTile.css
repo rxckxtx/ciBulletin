@@ -128,13 +128,99 @@
   font-weight: bold;
 }
 
+/* Archived event styles */
+.poster-tile.archived {
+  opacity: 0.7;
+  background-color: #f9f9f9;
+  border-color: #ccc;
+}
+
+.archived-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  text-align: center;
+  padding: 4px 0;
+  font-size: 0.8rem;
+  font-weight: bold;
+  z-index: 1;
+}
+
+/* Delete button and confirmation */
+.poster-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #999;
+  transition: color 0.2s;
+  padding: 5px;
+}
+
+.delete-button:hover {
+  color: #e74c3c;
+}
+
+.delete-confirm {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.delete-confirm p {
+  margin: 0 0 8px 0;
+  color: #721c24;
+  font-size: 0.9rem;
+}
+
+.delete-buttons {
+  display: flex;
+  justify-content: space-around;
+}
+
+.delete-buttons button {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.delete-buttons button:first-child {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.delete-buttons button:first-child:hover {
+  background-color: #c82333;
+}
+
+.delete-buttons button:last-child:hover {
+  background-color: #f8f9fa;
+}
+
 /* Responsive animations */
 @media (max-width: 768px) {
   .poster-tile {
     animation: none;
     transform: none !important;
   }
-  
+
   .poster-tile.urgent {
     animation: urgentPulse 2s infinite;
   }

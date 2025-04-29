@@ -107,7 +107,7 @@
   .events-list {
     grid-template-columns: 1fr;
   }
-  
+
   .hero-section h1 {
     font-size: 2rem;
   }
@@ -256,6 +256,11 @@
   margin-bottom: 20px;
 }
 
+.billboard-actions {
+  display: flex;
+  align-items: center;
+}
+
 .add-event-button {
   background-color: #ce1c40;
   color: white;
@@ -326,6 +331,26 @@
   padding: 20px;
   background-color: #fdeaea;
   border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.status-message {
+  text-align: center;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.status-message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .no-announcements {

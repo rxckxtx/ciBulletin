@@ -42,16 +42,29 @@ export const fetchAnnouncementById = async (id) => {
 };
 
 // Events endpoints
-export const fetchEvents = async () => {
+export const fetchEvents = async (showArchived = false) => {
   try {
     console.log('Fetching events from API...');
-    const response = await api.get('/api/events');
+    const response = await api.get('/api/events', {
+      params: { showArchived: showArchived }
+    });
     console.log('Events API response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching events:', error);
     // Return an empty array instead of throwing an error
     return [];
+  }
+};
+
+// Delete an event
+export const deleteEvent = async (eventId) => {
+  try {
+    const response = await api.delete(`/api/events/${eventId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    throw error.response?.data || { message: 'Failed to delete event' };
   }
 };
 

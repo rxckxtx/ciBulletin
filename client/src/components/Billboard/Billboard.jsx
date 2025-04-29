@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Billboard.css';
 import PosterTile from './PosterTile';
 import EventForm from './EventForm';
-import { fetchEvents, createEvent, checkDailyEventLimit } from '../../services/api';
+import { fetchEvents, createEvent, checkDailyEventLimit, deleteEvent } from '../../services/api';
 import './Billboard.css';
 
 const Billboard = () => {
@@ -10,27 +10,27 @@ const Billboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showEventForm, setShowEventForm] = useState(false);
-  const [canAddEvent, setCanAddEvent] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const loadEvents = async (includeArchived = showArchived) => {
+    try {
+      setLoading(true);
+      const data = await fetchEvents(includeArchived);
+      console.log('Events loaded:', data); // Debug log
+      setAnnouncements(data); // We're still using the announcements state variable
+
+      // Check daily event limit (not currently used in UI)
+      await checkDailyEventLimit();
+    } catch (err) {
+      console.error('Error loading events:', err);
+      setError('Failed to load events. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchEvents();
-        console.log('Events loaded:', data); // Debug log
-        setAnnouncements(data); // We're still using the announcements state variable
-
-        // Check if user can add more events today
-        const limitCheck = await checkDailyEventLimit();
-        setCanAddEvent(limitCheck.canAddMore);
-      } catch (err) {
-        console.error('Error loading events:', err);
-        setError('Failed to load events. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadEvents();
   }, []);
 
@@ -43,37 +43,89 @@ const Billboard = () => {
       const newEvent = await createEvent(eventData);
       setAnnouncements([newEvent, ...announcements]);
       setShowEventForm(false);
+      setStatusMessage('Event created successfully!');
 
-      // Update the daily limit status
-      const limitCheck = await checkDailyEventLimit();
-      setCanAddEvent(limitCheck.canAddMore);
+      // Clear status message after 3 seconds
+      setTimeout(() => setStatusMessage(''), 3000);
+
+      // Check daily event limit (not currently used in UI)
+      await checkDailyEventLimit();
     } catch (err) {
       console.error('Error creating event:', err);
       throw err; // Let the form component handle the error
     }
   };
 
+  const handleDeleteEvent = async (eventId) => {
+    try {
+      await deleteEvent(eventId);
+
+      // Remove the deleted event from the state
+      setAnnouncements(announcements.filter(event => event._id !== eventId));
+
+      setStatusMessage('Event deleted successfully!');
+
+      // Clear status message after 3 seconds
+      setTimeout(() => setStatusMessage(''), 3000);
+    } catch (err) {
+      console.error('Error deleting event:', err);
+      setError(`Failed to delete event: ${err.message}`);
+
+      // Clear error message after 5 seconds
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const toggleArchivedEvents = () => {
+    const newShowArchived = !showArchived;
+    setShowArchived(newShowArchived);
+    loadEvents(newShowArchived);
+  };
+
   return (
     <div className="billboard">
       <div className="billboard-header">
         <h2>Campus Bulletin Board</h2>
-        <button
-          className="add-event-button"
-          onClick={handleAddEvent}
-          style={{
-            backgroundColor: '#ce1c40',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '8px 16px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'block' // Force display
-          }}
-        >
-          + Add Event
-        </button>
+        <div className="billboard-actions">
+          <button
+            className="toggle-archived-button"
+            onClick={toggleArchivedEvents}
+            style={{
+              backgroundColor: showArchived ? '#6c757d' : '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '8px 16px',
+              marginRight: '10px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            {showArchived ? 'Hide Past Events' : 'Show Past Events'}
+          </button>
+          <button
+            className="add-event-button"
+            onClick={handleAddEvent}
+            style={{
+              backgroundColor: '#ce1c40',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '8px 16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            + Add Event
+          </button>
+        </div>
       </div>
+
+      {statusMessage && (
+        <div className="status-message success">
+          {statusMessage}
+        </div>
+      )}
 
       {loading ? (
         <div className="loading-spinner">Loading events...</div>
@@ -86,6 +138,7 @@ const Billboard = () => {
               <PosterTile
                 key={event._id}
                 announcement={event}
+                onDelete={handleDeleteEvent}
               />
             ))
           ) : (
