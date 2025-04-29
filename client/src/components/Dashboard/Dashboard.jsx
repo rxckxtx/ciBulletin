@@ -1,15 +1,15 @@
 import React from 'react';
 import Billboard from '../Billboard/Billboard';
-import Forum from '../Forum/Forum';
+import DashboardForum from './DashboardForum';
 import './Dashboard.css';
+import './DashboardForum.css';
 
 const Dashboard = () => {
-
   return (
     <div className="dashboard">
       <div className="dashboard-content">
         <Billboard />
-        <Forum />
+        <DashboardForum />
       </div>
     </div>
   );

@@ -16,7 +16,14 @@ module.exports = function(req, res, next) {
   // Verify token
   try {
     const decoded = jwt.verify(tokenValue, process.env.JWT_SECRET);
-    req.user = decoded.user;
+
+    // Ensure the decoded token contains a user object
+    if (!decoded || !decoded.user || !decoded.user.id) {
+      console.error('Invalid token payload:', decoded);
+      return res.status(401).json({ message: 'Token is not valid' });
+    }
+
+    req.user = decoded.user; // Attach the user object to the request
     next();
   } catch (err) {
     console.error('Token verification error:', err);

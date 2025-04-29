@@ -16,6 +16,11 @@
   color: #333;
 }
 
+.forum-header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
 .new-thread-btn {
   background-color: #4a90e2;
   color: white;
@@ -29,6 +34,36 @@
 
 .new-thread-btn:hover {
   background-color: #3a7bc8;
+}
+
+.refresh-btn {
+  background-color: #5cb85c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.refresh-btn:hover {
+  background-color: #4cae4c;
+}
+
+.back-link {
+  display: inline-block;
+  background-color: #f0f0f0;
+  color: #333;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.back-link:hover {
+  background-color: #e0e0e0;
 }
 
 .forum-categories {

@@ -4,7 +4,8 @@
   "description": "MERN stack application for ciBulletin",
   "main": "server/server.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=production node server/server.js",
+    "start": "node start-server.js",
+    "start-prod": "cross-env NODE_ENV=production node start-server.js",
     "server": "nodemon server/server.js",
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -14,8 +15,8 @@
     "build-client": "cd client && npm run build",
     "build-server": "echo 'No build step for server'",
     "build": "concurrently \"npm run build-client\" \"npm run build-server\"",
-    "prod": "npm run build && cross-env NODE_ENV=production node server/server.js",
-    "prod-https": "npm run build && cross-env NODE_ENV=production SSL_ENABLED=true ENABLE_HTTPS_REDIRECT=true node server/server.js"
+    "prod": "npm run build && cross-env NODE_ENV=production node start-server.js",
+    "prod-https": "npm run build && cross-env NODE_ENV=production SSL_ENABLED=true ENABLE_HTTPS_REDIRECT=true node start-server.js"
   },
   "dependencies": {
     "autoprefixer": "^10.4.21",

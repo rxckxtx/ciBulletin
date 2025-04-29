@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchThreads, createThread } from '../../services/api';
 import './Forum.css';
+import ThreadList from './ThreadList';
 
 const Forum = () => {
   const [threads, setThreads] = useState([]);
@@ -17,19 +18,33 @@ const Forum = () => {
     if (category) {
       setActiveCategory(category);
     }
-    
+
     loadThreads(category);
+
+    // Add a focus event listener to refresh threads when returning to this page
+    const handleFocus = () => {
+      console.log('Window focused, refreshing threads');
+      loadThreads(category);
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Clean up the event listener when component unmounts
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [category]);
 
-  const loadThreads = async (category = null) => {
+  const loadThreads = async (categoryId = null) => {
     try {
       setLoading(true);
-      const data = await fetchThreads(category);
-      setThreads(data);
+      const data = await fetchThreads(categoryId);
+      setThreads(data || []);
       setError('');
     } catch (err) {
       console.error('Error loading threads:', err);
       setError('Failed to load discussion threads');
+      setThreads([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -75,23 +90,41 @@ const Forum = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const categories = [
+    { id: 'all', name: 'All' },
+    { id: 'general', name: 'General' },
+    { id: 'academic', name: 'Academic' },
+    { id: 'clubs', name: 'Clubs' },
+    { id: 'events', name: 'Events' },
+    { id: 'questions', name: 'Questions' }
+  ];
+
   return (
     <div className="forum-container">
       <div className="forum-header">
         <h1>Discussion Forum</h1>
-        <button 
-          className="new-thread-btn"
-          onClick={() => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-              navigate('/login', { state: { from: '/forum' } });
-            } else {
-              setShowNewThreadForm(!showNewThreadForm);
-            }
-          }}
-        >
-          {showNewThreadForm ? 'Cancel' : 'New Thread'}
-        </button>
+        <div className="forum-header-buttons">
+          <button
+            className="refresh-btn"
+            onClick={() => loadThreads(activeCategory)}
+            title="Refresh threads"
+          >
+            ↻ Refresh
+          </button>
+          <button
+            className="new-thread-btn"
+            onClick={() => {
+              const token = localStorage.getItem('token');
+              if (!token) {
+                navigate('/login', { state: { from: '/forum' } });
+              } else {
+                setShowNewThreadForm(!showNewThreadForm);
+              }
+            }}
+          >
+            {showNewThreadForm ? 'Cancel' : 'New Thread'}
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -143,37 +176,37 @@ const Forum = () => {
       )}
 
       <div className="forum-categories">
-        <button 
+        <button
           className={`category-btn ${activeCategory === 'all' ? 'active' : ''}`}
           onClick={() => handleCategoryChange('all')}
         >
           All
         </button>
-        <button 
+        <button
           className={`category-btn ${activeCategory === 'general' ? 'active' : ''}`}
           onClick={() => handleCategoryChange('general')}
         >
           General
         </button>
-        <button 
+        <button
           className={`category-btn ${activeCategory === 'academic' ? 'active' : ''}`}
           onClick={() => handleCategoryChange('academic')}
         >
           Academic
         </button>
-        <button 
+        <button
           className={`category-btn ${activeCategory === 'clubs' ? 'active' : ''}`}
           onClick={() => handleCategoryChange('clubs')}
         >
           Clubs
         </button>
-        <button 
+        <button
           className={`category-btn ${activeCategory === 'events' ? 'active' : ''}`}
           onClick={() => handleCategoryChange('events')}
         >
           Events
         </button>
-        <button 
+        <button
           className={`category-btn ${activeCategory === 'questions' ? 'active' : ''}`}
           onClick={() => handleCategoryChange('questions')}
         >
@@ -183,27 +216,17 @@ const Forum = () => {
 
       {loading ? (
         <div className="loading">Loading threads...</div>
-      ) : threads.length === 0 ? (
-        <div className="no-threads">
-          <p>No threads found in this category.</p>
-          <p>Be the first to start a discussion!</p>
-        </div>
       ) : (
-        <div className="thread-list">
-          {threads.map(thread => (
-            <div key={thread._id} className="thread-item">
-              <Link to={`/forum/thread/${thread._id}`} className="thread-title">
-                {thread.title}
-              </Link>
-              <div className="thread-meta">
-                <span className="thread-category">{thread.category}</span>
-                <span className="thread-author">by {thread.user?.username || 'Unknown'}</span>
-                <span className="thread-date">{formatDate(thread.createdAt)}</span>
-                <span className="thread-replies">{Array.isArray(thread.posts) ? thread.posts.length : 0} replies</span>
-              </div>
+        <>
+          {threads.length === 0 ? (
+            <div className="no-threads">
+              <p>No discussions available.</p>
+              <Link to="/forum/new" className="create-thread-btn">Start a New Discussion</Link>
             </div>
-          ))}
-        </div>
+          ) : (
+            <ThreadList threads={threads} />
+          )}
+        </>
       )}
     </div>
   );

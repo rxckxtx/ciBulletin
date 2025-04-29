@@ -8,12 +8,21 @@ exports.getAllThreads = async (req, res) => {
   try {
     const { category } = req.query;
     const filter = category ? { category } : {};
-    
-    const threads = await Thread.find(filter)
+
+    // First get threads without posts content to save bandwidth
+    let threads = await Thread.find(filter)
       .sort({ createdAt: -1 })
-      .populate('user', 'username avatar')
-      .select('-posts');
-    
+      .populate('user', 'username avatar');
+
+    // Transform the threads to include post count but exclude post content
+    threads = threads.map(thread => {
+      const threadObj = thread.toObject();
+      threadObj.postCount = thread.posts.length;
+      // Remove the posts array to save bandwidth
+      delete threadObj.posts;
+      return threadObj;
+    });
+
     res.json(threads);
   } catch (error) {
     console.error('Error fetching threads:', error);
@@ -24,21 +33,35 @@ exports.getAllThreads = async (req, res) => {
 // Get thread by ID
 exports.getThreadById = async (req, res) => {
   try {
+    // Check if ID is valid
+    if (!req.params.id || req.params.id === 'undefined') {
+      return res.status(400).json({ message: 'Invalid thread ID' });
+    }
+
     const thread = await Thread.findById(req.params.id)
       .populate('user', 'username avatar')
       .populate('posts.user', 'username avatar');
-    
+
     if (!thread) {
       return res.status(404).json({ message: 'Thread not found' });
     }
-    
-    // Increment view count
-    thread.views += 1;
-    await thread.save();
-    
+
+    // Increment view count only if this is a direct request (not a refresh)
+    // Check if the request has a header indicating it's a refresh
+    if (!req.headers['x-refresh-request']) {
+      thread.views += 1;
+      await thread.save();
+    }
+
     res.json(thread);
   } catch (error) {
     console.error('Error fetching thread:', error);
+
+    // Check if it's a CastError (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid thread ID format' });
+    }
+
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -47,12 +70,12 @@ exports.getThreadById = async (req, res) => {
 exports.createThread = async (req, res) => {
   try {
     const { title, content, category } = req.body;
-    
+
     // Debug: Check if req.user exists
     if (!req.user) {
         return res.status(401).json({ message: 'User not authenticated' });
       }
-      
+
     const newThread = new Thread({
       title,
       content,
@@ -60,12 +83,12 @@ exports.createThread = async (req, res) => {
       user: req.user.id,
       posts: []
     });
-    
+
     const savedThread = await newThread.save();
-    
+
     // Populate user info before sending response
     await savedThread.populate('user', 'username avatar');
-    
+
     res.status(201).json(savedThread);
   } catch (error) {
     console.error('Error creating thread:', error);
@@ -77,26 +100,26 @@ exports.createThread = async (req, res) => {
 exports.addPost = async (req, res) => {
   try {
     const { content } = req.body;
-    
+
     const thread = await Thread.findById(req.params.id);
-    
+
     if (!thread) {
       return res.status(404).json({ message: 'Thread not found' });
     }
-    
+
     const newPost = {
       content,
       user: req.user.id
     };
-    
+
     thread.posts.push(newPost);
-    
+
     const updatedThread = await thread.save();
-    
+
     // Populate user info before sending response
     await updatedThread.populate('user', 'username avatar');
     await updatedThread.populate('posts.user', 'username avatar');
-    
+
     res.json(updatedThread);
   } catch (error) {
     console.error('Error adding post:', error);
@@ -108,18 +131,18 @@ exports.addPost = async (req, res) => {
 exports.deleteThread = async (req, res) => {
   try {
     const thread = await Thread.findById(req.params.id);
-    
+
     if (!thread) {
       return res.status(404).json({ message: 'Thread not found' });
     }
-    
+
     // Check if user is the thread creator or an admin
     if (thread.user.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this thread' });
     }
-    
+
     await Thread.findByIdAndDelete(req.params.id);
-    
+
     res.json({ message: 'Thread deleted successfully' });
   } catch (error) {
     console.error('Error deleting thread:', error);
@@ -130,33 +153,36 @@ exports.deleteThread = async (req, res) => {
 // Delete post from thread
 exports.deletePost = async (req, res) => {
   try {
+    // First find the thread to check permissions
     const thread = await Thread.findById(req.params.id);
-    
+
     if (!thread) {
       return res.status(404).json({ message: 'Thread not found' });
     }
-    
-    // Find the post
-    const post = thread.posts.id(req.params.postId);
-    
+
+    // Find the post to check ownership
+    const post = thread.posts.find(post => post._id.toString() === req.params.postId);
+
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
     // Check if user is the post creator or an admin
     if (post.user.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
-    
-    // Remove the post
-    post.remove();
-    
-    const updatedThread = await thread.save();
-    
+
+    // Now remove the post using the $pull operator
+    const updatedThread = await Thread.findByIdAndUpdate(
+      req.params.id,
+      { $pull: { posts: { _id: post._id } } },
+      { new: true } // Return the updated document
+    );
+
     // Populate user info before sending response
     await updatedThread.populate('user', 'username avatar');
     await updatedThread.populate('posts.user', 'username avatar');
-    
+
     res.json(updatedThread);
   } catch (error) {
     console.error('Error deleting post:', error);
@@ -179,11 +205,11 @@ exports.getForums = async (req, res) => {
 exports.getForumById = async (req, res) => {
   try {
     const forum = await Forum.findById(req.params.id);
-    
+
     if (!forum) {
       return res.status(404).json({ message: 'Forum not found' });
     }
-    
+
     res.json(forum);
   } catch (error) {
     console.error('Error fetching forum:', error);
@@ -195,19 +221,19 @@ exports.getForumById = async (req, res) => {
 exports.createForum = async (req, res) => {
   try {
     const { name, description, category } = req.body;
-    
+
     // Check if forum already exists
     const existingForum = await Forum.findOne({ name });
     if (existingForum) {
       return res.status(400).json({ message: 'Forum with this name already exists' });
     }
-    
+
     const newForum = new Forum({
       name,
       description,
       category
     });
-    
+
     const savedForum = await newForum.save();
     res.status(201).json(savedForum);
   } catch (error) {
@@ -224,11 +250,11 @@ exports.updateForum = async (req, res) => {
       req.body,
       { new: true }
     );
-    
+
     if (!forum) {
       return res.status(404).json({ message: 'Forum not found' });
     }
-    
+
     res.json(forum);
   } catch (error) {
     console.error('Error updating forum:', error);
@@ -240,17 +266,17 @@ exports.updateForum = async (req, res) => {
 exports.deleteForum = async (req, res) => {
   try {
     const forum = await Forum.findById(req.params.id);
-    
+
     if (!forum) {
       return res.status(404).json({ message: 'Forum not found' });
     }
-    
+
     // Delete all topics in this forum
     await Topic.deleteMany({ forum: req.params.id });
-    
+
     // Delete the forum
     await Forum.findByIdAndDelete(req.params.id);
-    
+
     res.json({ message: 'Forum deleted successfully' });
   } catch (error) {
     console.error('Error deleting forum:', error);

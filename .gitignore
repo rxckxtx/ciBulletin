@@ -30,6 +30,11 @@ server/node_modules
 .env.staging
 .env.qa
 
+#scripts
+run-server.bat
+start-server.bat
+start-server.js
+
 # SSL certificates
 /ssl
 ssl/

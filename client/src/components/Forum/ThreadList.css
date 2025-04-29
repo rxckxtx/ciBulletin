@@ -1,0 +1,58 @@
+.thread-list {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.thread-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.thread-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thread-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.thread-title:hover {
+  color: #0056b3;
+}
+
+.thread-preview {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.thread-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #777;
+}
+
+.thread-category {
+  background-color: #e9f5ff;
+  color: #0056b3;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.thread-author, .thread-date, .thread-comments {
+  display: flex;
+  align-items: center;
+}

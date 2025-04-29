@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login/Login';
+import Register from './components/Login/Register';
 import Dashboard from './components/Dashboard/Dashboard';
 import './App.css';
 import ForumList from './components/Forum/ForumList';
@@ -10,6 +11,7 @@ import Navigation from './components/Navigation/Navigation';
 import ResourceHub from './components/ResourceHub/ResourceHub';
 import ResourceDetail from './components/ResourceHub/ResourceDetail';
 import ResourceForm from './components/ResourceHub/ResourceForm';
+import CategoryPage from './components/Forum/CategoryPage';
 
 const Header = ({ isAuthenticated, handleLogout }) => {
   return (
@@ -67,6 +69,10 @@ function App() {
             path="/login"
             element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleLogin} />}
           />
+          <Route
+            path="/register"
+            element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />}
+          />
 
           {/* Protected routes */}
           <Route
@@ -76,6 +82,7 @@ function App() {
           <Route path="/forum" element={isAuthenticated ? <ForumList /> : <Navigate to="/login" />} />
           <Route path="/forum/thread/:id" element={isAuthenticated ? <ThreadDetail /> : <Navigate to="/login" />} />
           <Route path="/forum/new" element={isAuthenticated ? <NewThread /> : <Navigate to="/login" />} />
+          <Route path="/forum/category/:categoryId" element={<CategoryPage />} />
 
           {/* Resource Hub Routes */}
           <Route path="/resources" element={isAuthenticated ? <ResourceHub /> : <Navigate to="/login" />} />

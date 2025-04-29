@@ -2,33 +2,84 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchThreadById, addPost, deleteThread, deleteForumPost } from '../../services/api';
 import './ThreadDetail.css';
+import { jwtDecode } from 'jwt-decode';
 
 const ThreadDetail = () => {
   const [thread, setThread] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newPost, setNewPost] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
+  // Track if this is the initial load or a refresh
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Get current user ID from token
   useEffect(() => {
-    loadThread();
-  }, [id]);
-  
-  const loadThread = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        console.log('Decoded token:', decoded);
+        if (decoded.user && decoded.user.id) {
+          setCurrentUserId(decoded.user.id);
+          console.log('Current user ID set to:', decoded.user.id);
+        }
+      } catch (err) {
+        console.error('Error decoding token:', err);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (id) {
+      // On initial load, we want to count the view
+      loadThread(isInitialLoad);
+      // After initial load, set to false for future refreshes
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
+    } else {
+      setError('Invalid thread ID');
+      setLoading(false);
+    }
+  }, [id, isInitialLoad]);
+
+  const loadThread = async (countView = false) => {
     try {
       setLoading(true);
-      const data = await fetchThreadById(id);
+      // Make sure id is not undefined before making the API call
+      if (!id) {
+        setError('Invalid thread ID');
+        return;
+      }
+
+      // Pass isRefresh=true if we don't want to count the view
+      const data = await fetchThreadById(id, !countView);
+      console.log('Thread data loaded:', data);
+
+      // Log the structure of posts for debugging
+      if (data && data.posts) {
+        console.log('Posts structure:', data.posts);
+        data.posts.forEach((post, index) => {
+          console.log(`Post ${index} ID:`, post._id);
+          console.log(`Post ${index} user:`, post.user);
+        });
+      }
+
       setThread(data);
       setError('');
     } catch (err) {
       console.error('Error loading thread:', err);
       setError('Failed to load thread details');
+      // Don't set thread to null, keep previous state if any
     } finally {
       setLoading(false);
     }
   };
-  
+
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -37,12 +88,12 @@ const ThreadDetail = () => {
         navigate('/login', { state: { from: `/forum/thread/${id}` } });
         return;
       }
-      
+
       if (!newPost.trim()) {
         setError('Post content cannot be empty');
         return;
       }
-      
+
       const updatedThread = await addPost(id, { content: newPost });
       setThread(updatedThread);
       setNewPost('');
@@ -51,12 +102,12 @@ const ThreadDetail = () => {
       setError('Failed to add your reply');
     }
   };
-  
+
   const handleDeleteThread = async () => {
     if (!window.confirm('Are you sure you want to delete this thread? This action cannot be undone.')) {
       return;
     }
-    
+
     try {
       await deleteThread(id);
       navigate('/forum');
@@ -65,38 +116,45 @@ const ThreadDetail = () => {
       setError('Failed to delete thread');
     }
   };
-  
+
   const handleDeletePost = async (postId) => {
     if (!window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
       return;
     }
-    
+
     try {
+      console.log('Attempting to delete post with ID:', postId);
+      console.log('From thread with ID:', id);
+
       const updatedThread = await deleteForumPost(id, postId);
+      console.log('Updated thread after post deletion:', updatedThread);
+
       setThread(updatedThread);
+      setError(''); // Clear any previous errors
     } catch (err) {
       console.error('Error deleting post:', err);
-      setError('Failed to delete post');
+      console.error('Error response:', err.response?.data);
+      setError(err.response?.data?.message || 'Failed to delete post');
     }
   };
-  
+
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-  
+
   if (loading) {
     return <div className="loading">Loading thread...</div>;
   }
-  
+
   if (error && !thread) {
     return <div className="error-message">{error}</div>;
   }
-  
+
   if (!thread) {
     return <div className="not-found">Thread not found</div>;
   }
-  
+
   return (
     <div className="thread-detail-container">
       <div className="thread-navigation">
@@ -104,9 +162,9 @@ const ThreadDetail = () => {
           &larr; Back to Forum
         </button>
       </div>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <div className="thread-header">
         <h1>{thread.title}</h1>
         <div className="thread-meta">
@@ -115,20 +173,37 @@ const ThreadDetail = () => {
           <span className="thread-date">{formatDate(thread.createdAt)}</span>
         </div>
       </div>
-      
+
       <div className="thread-content">
         <p>{thread.content}</p>
       </div>
-      
+
       <div className="thread-actions">
-        {/* Only show delete button if user is the thread creator or an admin */}
-        {/* This would require checking the current user ID against thread.user._id */}
-        {/* <button onClick={handleDeleteThread} className="delete-btn">Delete Thread</button> */}
+        {/* Show delete button if user is the thread creator */}
+        {currentUserId && thread.user && (
+          (() => {
+            // Handle different possible formats of user ID
+            let threadUserId;
+            if (typeof thread.user === 'string') {
+              threadUserId = thread.user;
+            } else if (thread.user._id) {
+              threadUserId = thread.user._id;
+            }
+
+            console.log('Thread user ID:', threadUserId);
+            console.log('Current user ID:', currentUserId);
+
+            // Compare as strings to avoid type mismatches
+            return threadUserId && currentUserId && threadUserId.toString() === currentUserId.toString();
+          })() && (
+            <button onClick={handleDeleteThread} className="delete-btn">Delete Thread</button>
+          )
+        )}
       </div>
-      
+
       <div className="posts-section">
         <h3>Replies ({thread.posts.length})</h3>
-        
+
         {thread.posts.length === 0 ? (
           <div className="no-posts">No replies yet. Be the first to reply!</div>
         ) : (
@@ -143,15 +218,32 @@ const ThreadDetail = () => {
                   <p>{post.content}</p>
                 </div>
                 <div className="post-actions">
-                  {/* Only show delete button if user is the post creator or an admin */}
-                  {/* <button onClick={() => handleDeletePost(post._id)} className="delete-btn">Delete</button> */}
+                  {/* Show delete button if user is the post creator */}
+                  {currentUserId && post.user && (
+                    (() => {
+                      // Handle different possible formats of user ID
+                      let postUserId;
+                      if (typeof post.user === 'string') {
+                        postUserId = post.user;
+                      } else if (post.user && post.user._id) {
+                        postUserId = post.user._id;
+                      }
+
+                      console.log(`Post ID ${post._id} - User ID:`, postUserId);
+
+                      // Compare as strings to avoid type mismatches
+                      return postUserId && currentUserId && postUserId.toString() === currentUserId.toString();
+                    })() && (
+                      <button onClick={() => handleDeletePost(post._id)} className="delete-btn">Delete Reply</button>
+                    )
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-      
+
       <div className="reply-form">
         <h3>Add a Reply</h3>
         <form onSubmit={handlePostSubmit}>

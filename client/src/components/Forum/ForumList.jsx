@@ -8,7 +8,7 @@ const ForumList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
-  
+
   const categories = [
     { id: null, name: 'All' },
     { id: 'general', name: 'General' },
@@ -17,11 +17,11 @@ const ForumList = () => {
     { id: 'events', name: 'Events' },
     { id: 'announcements', name: 'Announcements' }
   ];
-  
+
   useEffect(() => {
     loadThreads();
   }, [activeCategory]);
-  
+
   const loadThreads = async () => {
     try {
       setLoading(true);
@@ -35,21 +35,21 @@ const ForumList = () => {
       setLoading(false);
     }
   };
-  
+
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-  
+
   return (
     <div className="forum-container">
       <div className="forum-header">
         <h1>Discussion Forum</h1>
         <Link to="/forum/new" className="create-thread-btn">Create New Thread</Link>
       </div>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <div className="category-filter">
         {categories.map(category => (
           <button
@@ -61,7 +61,7 @@ const ForumList = () => {
           </button>
         ))}
       </div>
-      
+
       {loading ? (
         <div className="loading">Loading threads...</div>
       ) : threads.length === 0 ? (
@@ -82,7 +82,7 @@ const ForumList = () => {
                   <span className="thread-author">Posted by {thread.user?.username || 'Unknown'}</span>
                   <span className="thread-date">{formatDate(thread.createdAt)}</span>
                   <span className="thread-stats">
-                    <span className="thread-replies">{thread.posts?.length || 0} replies</span>
+                    <span className="thread-replies">{typeof thread.postCount === 'number' ? thread.postCount : (thread.posts?.length || 0)} replies</span>
                     <span className="thread-views">{thread.views} views</span>
                   </span>
                 </div>
