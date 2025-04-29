@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const ThreadSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -44,5 +43,5 @@ const ThreadSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-const Thread = mongoose.models.Thread || mongoose.model('Thread', ThreadSchema);
+
 module.exports = mongoose.model('Thread', ThreadSchema);

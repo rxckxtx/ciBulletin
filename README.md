@@ -28,12 +28,14 @@ ciBulletin operates on a full-stack JavaScript framework:
 
 The current directory structure is as follows:
 
-```
+```text
 ciBulletin/
 ├── client/             # React frontend application
 ├── server/             # Express backend server
+├── ssl/                # SSL certificates (not in version control)
 ├── .gitignore          # Specifies files to ignore in Git
 ├── README.md           # Project documentation
+├── PRODUCTION.md       # Production deployment guide
 ├── package-lock.json   # Dependency tree lock file
 └── package.json        # Project metadata and scripts
 ```
@@ -57,13 +59,40 @@ To set up the project locally:
    npm install
    ```
 
-3. **Start the development server**:
+3. **SSL Certificates Setup** (for HTTPS):
+
+   Create an `ssl` directory in the project root:
 
    ```bash
-   npm start
+   mkdir -p ssl
    ```
 
-The application will be accessible at `http://localhost:3000`.
+   For development, generate self-signed certificates:
+
+   ```bash
+   # On Linux/Mac
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ssl/private.key -out ssl/certificate.crt
+
+   # On Windows (using Git Bash or similar)
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ssl/private.key -out ssl/certificate.crt
+   ```
+
+   > **Important**: SSL certificates should never be committed to version control. The `ssl` directory is included in `.gitignore`.
+
+4. **Start the development server**:
+
+   ```bash
+   # HTTP only
+   npm run dev
+
+   # With HTTPS support
+   npm run dev-full-https
+   ```
+
+The application will be accessible at:
+
+- HTTP: `http://localhost:3000` (frontend) and `http://localhost:5000` (backend)
+- HTTPS: `https://localhost:3000` (frontend) and `https://localhost:8443` (backend)
 
 ---
 

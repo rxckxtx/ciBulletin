@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Billboard.css';
 import PosterTile from './PosterTile';
 import EventForm from './EventForm';
-import { fetchAnnouncements, createEvent, checkDailyEventLimit } from '../../services/api';
+import { fetchEvents, createEvent, checkDailyEventLimit } from '../../services/api';
 import './Billboard.css';
 
 const Billboard = () => {
@@ -13,24 +13,25 @@ const Billboard = () => {
   const [canAddEvent, setCanAddEvent] = useState(true);
 
   useEffect(() => {
-    const loadAnnouncements = async () => {
+    const loadEvents = async () => {
       try {
         setLoading(true);
-        const data = await fetchAnnouncements();
-        setAnnouncements(data);
-        
+        const data = await fetchEvents();
+        console.log('Events loaded:', data); // Debug log
+        setAnnouncements(data); // We're still using the announcements state variable
+
         // Check if user can add more events today
         const limitCheck = await checkDailyEventLimit();
         setCanAddEvent(limitCheck.canAddMore);
       } catch (err) {
-        console.error('Error loading announcements:', err);
-        setError('Failed to load announcements. Please try again later.');
+        console.error('Error loading events:', err);
+        setError('Failed to load events. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    loadAnnouncements();
+    loadEvents();
   }, []);
 
   const handleAddEvent = () => {
@@ -42,7 +43,7 @@ const Billboard = () => {
       const newEvent = await createEvent(eventData);
       setAnnouncements([newEvent, ...announcements]);
       setShowEventForm(false);
-      
+
       // Update the daily limit status
       const limitCheck = await checkDailyEventLimit();
       setCanAddEvent(limitCheck.canAddMore);
@@ -56,10 +57,10 @@ const Billboard = () => {
     <div className="billboard">
       <div className="billboard-header">
         <h2>Campus Bulletin Board</h2>
-        <button 
-          className="add-event-button" 
+        <button
+          className="add-event-button"
           onClick={handleAddEvent}
-          style={{ 
+          style={{
             backgroundColor: '#ce1c40',
             color: 'white',
             border: 'none',
@@ -75,21 +76,21 @@ const Billboard = () => {
       </div>
 
       {loading ? (
-        <div className="loading-spinner">Loading...</div>
+        <div className="loading-spinner">Loading events...</div>
       ) : error ? (
         <div className="error-message">{error}</div>
       ) : (
         <div className="poster-grid">
           {announcements.length > 0 ? (
-            announcements.map(announcement => (
-              <PosterTile 
-                key={announcement._id} 
-                announcement={announcement} 
+            announcements.map(event => (
+              <PosterTile
+                key={event._id}
+                announcement={event}
               />
             ))
           ) : (
             <div className="no-announcements">
-              <p>No announcements to display.</p>
+              <p>No events to display.</p>
               <p>Be the first to add an event!</p>
             </div>
           )}
@@ -97,9 +98,9 @@ const Billboard = () => {
       )}
 
       {showEventForm && (
-        <EventForm 
-          onSubmit={handleEventSubmit} 
-          onCancel={() => setShowEventForm(false)} 
+        <EventForm
+          onSubmit={handleEventSubmit}
+          onCancel={() => setShowEventForm(false)}
         />
       )}
     </div>

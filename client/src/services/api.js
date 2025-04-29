@@ -43,8 +43,16 @@ export const fetchAnnouncementById = async (id) => {
 
 // Events endpoints
 export const fetchEvents = async () => {
-  const response = await api.get('/api/events');
-  return response.data;
+  try {
+    console.log('Fetching events from API...');
+    const response = await api.get('/api/events');
+    console.log('Events API response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    // Return an empty array instead of throwing an error
+    return [];
+  }
 };
 
 // Create a new event with image upload support
@@ -190,6 +198,62 @@ export const deleteThread = async (threadId) => {
 
 export const deleteForumPost = async (threadId, postId) => {
   const response = await api.delete(`/api/forum/${threadId}/posts/${postId}`);
+  return response.data;
+};
+
+// Resource Hub endpoints
+export const fetchResources = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+
+  // Add any provided parameters to the query string
+  if (params.category) queryParams.append('category', params.category);
+  if (params.fileType) queryParams.append('fileType', params.fileType);
+  if (params.search) queryParams.append('search', params.search);
+  if (params.limit) queryParams.append('limit', params.limit);
+  if (params.page) queryParams.append('page', params.page);
+
+  const url = `/api/resources?${queryParams.toString()}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+export const fetchResourceById = async (id) => {
+  const response = await api.get(`/api/resources/${id}`);
+  return response.data;
+};
+
+export const createResource = async (resourceData) => {
+  try {
+    const response = await api.post('/api/resources', resourceData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API error:', error);
+    throw error.response?.data || { message: 'Failed to create resource' };
+  }
+};
+
+export const updateResource = async (id, resourceData) => {
+  const response = await api.put(`/api/resources/${id}`, resourceData);
+  return response.data;
+};
+
+export const deleteResource = async (id) => {
+  const response = await api.delete(`/api/resources/${id}`);
+  return response.data;
+};
+
+export const downloadResource = async (id) => {
+  // This will trigger a file download, so we need to handle it differently
+  window.open(`${api.defaults.baseURL}/api/resources/${id}/download`, '_blank');
+};
+
+export const fetchUserResources = async (userId = null) => {
+  const url = userId ? `/api/resources/user/${userId}` : '/api/resources/user';
+  const response = await api.get(url);
   return response.data;
 };
 

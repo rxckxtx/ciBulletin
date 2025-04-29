@@ -13,6 +13,11 @@ server/node_modules
 # production
 /build
 /docs
+/client/build
+/server/uploads
+/server/logs
+/dist
+/out
 
 # misc
 .DS_Store
@@ -21,12 +26,43 @@ server/node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production.example
+.env.staging
+.env.qa
 
-#once ready to deploy, remove this section
-docker-compose.yml      
-Dockerfile 
-.dockerignore             
+# SSL certificates
+/ssl
+ssl/
+*.key
+*.crt
+*.pem
+
+# Editor/IDE-specific
+.vscode/
+.idea/
+*.iml
+.history/
+
+# Temporary files
+*.tmp
+*.swp
+/tmp
+/cache
+
+# Log files
+*.log
+
+# CI/CD
+/.github/workflows/*.log
+
+#once ready to deploy with docker, remove this section
+docker-compose.yml
+Dockerfile
+.dockerignore
+docker-compose.override.yml
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+PRODUCTION.md

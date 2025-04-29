@@ -3,20 +3,31 @@
   "version": "1.0.0",
   "description": "MERN stack application for ciBulletin",
   "main": "server/server.js",
-  "type": "module",
   "scripts": {
-    "start": "node server/server.js",
+    "start": "cross-env NODE_ENV=production node server/server.js",
     "server": "nodemon server/server.js",
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-all": "npm install && cd client && npm install"
+    "dev-https": "cross-env SSL_ENABLED=true nodemon server/server.js",
+    "dev-full-https": "concurrently \"npm run dev-https\" \"cd client && npm start\"",
+    "install-all": "npm install && cd client && npm install",
+    "build-client": "cd client && npm run build",
+    "build-server": "echo 'No build step for server'",
+    "build": "concurrently \"npm run build-client\" \"npm run build-server\"",
+    "prod": "npm run build && cross-env NODE_ENV=production node server/server.js",
+    "prod-https": "npm run build && cross-env NODE_ENV=production SSL_ENABLED=true ENABLE_HTTPS_REDIRECT=true node server/server.js"
   },
   "dependencies": {
     "autoprefixer": "^10.4.21",
     "bcryptjs": "^3.0.2",
+    "compression": "^1.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "fs": "^0.0.1-security",
+    "helmet": "^8.1.0",
+    "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.16.0",
     "mongoose": "^8.13.2",
@@ -26,6 +37,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
     "nodemon": "^2.0.22"
   },
   "repository": {
