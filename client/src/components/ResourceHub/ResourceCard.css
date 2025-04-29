@@ -1,0 +1,145 @@
+.resource-card {
+  display: flex;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+
+.resource-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.resource-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  background-color: #f5f5f5;
+  padding: 15px;
+}
+
+.resource-card-icon i {
+  font-size: 2.5rem;
+}
+
+.resource-card-content {
+  flex: 1;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.resource-card-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.resource-card-title:hover {
+  color: #ce1c40;
+}
+
+.resource-card-description {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  flex-grow: 1;
+}
+
+.resource-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+}
+
+.resource-card-category {
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: white;
+  font-weight: bold;
+}
+
+.resource-card-type {
+  background-color: #f0f0f0;
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: #333;
+}
+
+.resource-card-date,
+.resource-card-downloads {
+  color: #777;
+}
+
+.resource-card-user {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.resource-card-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 8px;
+  object-fit: cover;
+}
+
+.resource-card-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+.resource-download-btn,
+.resource-details-btn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 1.2rem;
+  padding: 8px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.resource-download-btn:hover {
+  color: #4caf50;
+}
+
+.resource-details-btn {
+  color: #777;
+  text-decoration: none;
+  text-align: center;
+}
+
+.resource-details-btn:hover {
+  color: #2196f3;
+}
+
+@media (max-width: 600px) {
+  .resource-card {
+    flex-direction: column;
+  }
+  
+  .resource-card-icon {
+    width: 100%;
+    padding: 10px;
+  }
+  
+  .resource-card-actions {
+    flex-direction: row;
+    justify-content: space-around;
+  }
+}

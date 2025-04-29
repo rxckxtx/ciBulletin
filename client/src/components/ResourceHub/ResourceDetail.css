@@ -1,0 +1,283 @@
+.resource-detail-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.resource-detail-header {
+  margin-bottom: 30px;
+}
+
+.back-link {
+  display: inline-block;
+  color: #555;
+  text-decoration: none;
+  margin-bottom: 20px;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: #ce1c40;
+}
+
+.resource-detail-title {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.resource-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.resource-detail-category {
+  background-color: #4285F4;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.resource-detail-type,
+.resource-detail-date,
+.resource-detail-downloads {
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.resource-detail-type i,
+.resource-detail-date i,
+.resource-detail-downloads i {
+  margin-right: 5px;
+}
+
+.resource-detail-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+}
+
+.resource-detail-description {
+  color: #333;
+}
+
+.resource-detail-description h3 {
+  margin-bottom: 15px;
+  color: #222;
+}
+
+.resource-detail-description p {
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.resource-detail-tags {
+  margin-top: 20px;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.resource-tag {
+  background-color: #f0f0f0;
+  color: #555;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+}
+
+.resource-detail-sidebar {
+  border-left: 1px solid #eee;
+  padding-left: 25px;
+}
+
+.resource-detail-user {
+  margin-bottom: 30px;
+}
+
+.resource-detail-user h3 {
+  margin-bottom: 15px;
+  color: #222;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.user-name {
+  font-weight: bold;
+  color: #333;
+}
+
+.resource-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.download-button,
+.edit-button,
+.delete-button {
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.download-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.download-button:hover {
+  background-color: #388e3c;
+}
+
+.edit-button {
+  background-color: #2196f3;
+  color: white;
+  text-decoration: none;
+}
+
+.edit-button:hover {
+  background-color: #1976d2;
+}
+
+.delete-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #d32f2f;
+}
+
+.download-button i,
+.edit-button i,
+.delete-button i {
+  margin-right: 8px;
+}
+
+.resource-detail-loading,
+.resource-detail-error,
+.resource-detail-not-found {
+  text-align: center;
+  padding: 40px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.resource-detail-error {
+  color: #c62828;
+}
+
+.back-to-resources {
+  display: inline-block;
+  margin-top: 20px;
+  color: #ce1c40;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.delete-confirmation-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.delete-confirmation-content {
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.delete-confirmation-content h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.delete-confirmation-content p {
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.delete-confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancel-button,
+.confirm-delete-button {
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+.cancel-button {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.confirm-delete-button {
+  background-color: #f44336;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .resource-detail-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .resource-detail-sidebar {
+    border-left: none;
+    border-top: 1px solid #eee;
+    padding-left: 0;
+    padding-top: 20px;
+  }
+  
+  .resource-detail-meta {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
