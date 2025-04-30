@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import './Billboard.css';
 import PosterTile from './PosterTile';
 import EventForm from './EventForm';
 import { fetchEvents, createEvent, checkDailyEventLimit, deleteEvent } from '../../services/api';
-import './Billboard.css';
 
 const Billboard = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -83,38 +81,21 @@ const Billboard = () => {
   };
 
   return (
-    <div className="billboard">
-      <div className="billboard-header">
-        <h2>Campus Bulletin Board</h2>
-        <div className="billboard-actions">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="flex justify-between items-center p-4 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-800">Campus Bulletin Board</h2>
+        <div className="flex space-x-2">
           <button
-            className="toggle-archived-button"
+            className={`px-3 py-1.5 rounded text-white text-sm font-medium transition-colors ${
+              showArchived ? 'bg-gray-500 hover:bg-gray-600' : 'bg-green-500 hover:bg-green-600'
+            }`}
             onClick={toggleArchivedEvents}
-            style={{
-              backgroundColor: showArchived ? '#6c757d' : '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '8px 16px',
-              marginRight: '10px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
           >
             {showArchived ? 'Hide Past Events' : 'Show Past Events'}
           </button>
           <button
-            className="add-event-button"
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
             onClick={handleAddEvent}
-            style={{
-              backgroundColor: '#ce1c40',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '8px 16px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
           >
             + Add Event
           </button>
@@ -122,17 +103,21 @@ const Billboard = () => {
       </div>
 
       {statusMessage && (
-        <div className="status-message success">
+        <div className="p-3 bg-green-50 text-green-700 text-sm border-b border-green-100">
           {statusMessage}
         </div>
       )}
 
       {loading ? (
-        <div className="loading-spinner">Loading events...</div>
+        <div className="p-12 text-center text-gray-500">
+          Loading events...
+        </div>
       ) : error ? (
-        <div className="error-message">{error}</div>
+        <div className="p-4 bg-red-50 text-red-600 text-sm">
+          {error}
+        </div>
       ) : (
-        <div className="poster-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
           {announcements.length > 0 ? (
             announcements.map(event => (
               <PosterTile
@@ -142,9 +127,9 @@ const Billboard = () => {
               />
             ))
           ) : (
-            <div className="no-announcements">
-              <p>No events to display.</p>
-              <p>Be the first to add an event!</p>
+            <div className="col-span-full p-8 text-center bg-gray-50 rounded-lg">
+              <p className="text-gray-500 mb-2">No events to display.</p>
+              <p className="text-gray-500">Be the first to add an event!</p>
             </div>
           )}
         </div>
