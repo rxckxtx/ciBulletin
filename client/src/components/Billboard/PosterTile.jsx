@@ -80,7 +80,7 @@ const PosterTile = ({ announcement, onDelete }) => {
       className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 ${getThemeColor(announcement.theme)}
         ${urgentPulseClass}
         ${isArchived ? 'opacity-75' : ''}
-        transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}
+        hover:shadow-md`}
     >
       {isArchived && (
         <div className="bg-gray-600 text-white text-xs font-medium py-1 px-2 text-center">
@@ -90,16 +90,14 @@ const PosterTile = ({ announcement, onDelete }) => {
 
       {imageSrc && (
         <div
-          className="w-full h-40 overflow-hidden cursor-pointer relative"
+          className="w-full h-40 overflow-hidden cursor-pointer"
           onClick={toggleExpandImage}
         >
           <img
             src={imageSrc}
             alt={announcement.title}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-300">
-          </div>
         </div>
       )}
 
@@ -168,12 +166,15 @@ const PosterTile = ({ announcement, onDelete }) => {
       {/* Expanded image modal */}
       {expandedImage && imageSrc && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
           onClick={toggleExpandImage}
         >
-          <div className="relative max-w-4xl max-h-screen">
+          <div
+            className="relative max-w-full max-h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-              className="absolute top-4 right-4 bg-white rounded-full w-8 h-8 flex items-center justify-center text-gray-800 hover:bg-gray-200"
+              className="absolute top-4 right-4 bg-white rounded-full w-10 h-10 flex items-center justify-center text-gray-800 hover:bg-gray-200 z-10"
               onClick={toggleExpandImage}
             >
               ✕
@@ -181,12 +182,8 @@ const PosterTile = ({ announcement, onDelete }) => {
             <img
               src={imageSrc}
               alt={announcement.title}
-              className="max-w-full max-h-[90vh] object-contain"
+              className="max-w-[90vw] max-h-[90vh] object-contain"
             />
-            <div className="bg-white p-4 text-center">
-              <h3 className="text-lg font-semibold">{announcement.title}</h3>
-              {announcement.group && <p className="text-sm text-gray-600">By {announcement.group}</p>}
-            </div>
           </div>
         </div>
       )}
