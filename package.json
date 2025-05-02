@@ -10,7 +10,7 @@
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install-all": "npm install && cd client && npm install",
-    "build-client": "cd client && npm run build",
+    "build-client": "cd client && npm install && npm run build",
     "build-server": "echo 'No build step for server'",
     "build": "concurrently \"npm run build-client\" \"npm run build-server\"",
     "prod": "npm run build && cross-env NODE_ENV=production node start-server.js",
