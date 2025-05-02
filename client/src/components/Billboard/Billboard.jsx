@@ -44,7 +44,7 @@ const Billboard = () => {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadEvents();
   }, []);
@@ -87,13 +87,7 @@ const Billboard = () => {
 
   const handleDeleteEvent = async (eventId) => {
     try {
-      // Get the token from localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('You must be logged in to delete events');
-        setTimeout(() => setError(''), 5000);
-        return;
-      }
+      // No need to check for token - authentication is handled by HttpOnly cookies
 
       // Call the API to delete the event
       await deleteEvent(eventId);

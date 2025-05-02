@@ -10,7 +10,7 @@ const NewThread = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  
+
   const categories = [
     { id: 'general', name: 'General' },
     { id: 'academic', name: 'Academic' },
@@ -18,38 +18,33 @@ const NewThread = () => {
     { id: 'events', name: 'Events' },
     { id: 'announcements', name: 'Announcements' }
   ];
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
       setError('');
-      
-      // Check if user is logged in
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login', { state: { from: '/forum/new' } });
-        return;
-      }
-      
+
+      // No need to check for token - authentication is handled by HttpOnly cookies
+
       // Validate form
       if (!title.trim()) {
         setError('Title is required');
         return;
       }
-      
+
       if (!content.trim()) {
         setError('Content is required');
         return;
       }
-      
+
       const newThread = await createThread({
         title,
         content,
         category
       });
-      
+
       navigate(`/forum/thread/${newThread._id}`);
     } catch (err) {
       console.error('Error creating thread:', err);
@@ -58,7 +53,7 @@ const NewThread = () => {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="new-thread-container">
       <div className="new-thread-header">
@@ -67,9 +62,9 @@ const NewThread = () => {
           &larr; Back to Forum
         </button>
       </div>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <form onSubmit={handleSubmit} className="thread-form">
         <div className="form-group">
           <label htmlFor="title">Title</label>
@@ -82,7 +77,7 @@ const NewThread = () => {
             required
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="category">Category</label>
           <select
@@ -97,7 +92,7 @@ const NewThread = () => {
             ))}
           </select>
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="content">Content</label>
           <textarea
@@ -109,7 +104,7 @@ const NewThread = () => {
             required
           ></textarea>
         </div>
-        
+
         <div className="form-actions">
           <button
             type="button"

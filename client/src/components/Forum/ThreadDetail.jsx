@@ -86,11 +86,7 @@ const ThreadDetail = () => {
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login', { state: { from: `/forum/thread/${id}` } });
-        return;
-      }
+      // No need to check for token - authentication is handled by HttpOnly cookies
 
       if (!newPost.trim()) {
         setError('Post content cannot be empty');
@@ -101,7 +97,12 @@ const ThreadDetail = () => {
       setThread(updatedThread);
       setNewPost('');
     } catch (err) {
-      setError('Failed to add your reply');
+      if (err.response && err.response.status === 401) {
+        // If unauthorized, redirect to login
+        navigate('/login', { state: { from: `/forum/thread/${id}` } });
+      } else {
+        setError('Failed to add your reply');
+      }
     }
   };
 

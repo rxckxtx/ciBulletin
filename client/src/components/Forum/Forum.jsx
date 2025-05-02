@@ -67,18 +67,19 @@ const Forum = () => {
   const handleNewThreadSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login', { state: { from: '/forum' } });
-        return;
-      }
+      // No need to check for token - authentication is handled by HttpOnly cookies
 
       const createdThread = await createThread(newThread);
       setThreads([createdThread, ...threads]);
       setNewThread({ title: '', content: '', category: 'general' });
       setShowNewThreadForm(false);
     } catch (err) {
-      setError('Failed to create new thread');
+      if (err.response && err.response.status === 401) {
+        // If unauthorized, redirect to login
+        navigate('/login', { state: { from: '/forum' } });
+      } else {
+        setError('Failed to create new thread');
+      }
     }
   };
 
@@ -99,12 +100,8 @@ const Forum = () => {
           <button
             className="new-thread-btn"
             onClick={() => {
-              const token = localStorage.getItem('token');
-              if (!token) {
-                navigate('/login', { state: { from: '/forum' } });
-              } else {
-                setShowNewThreadForm(!showNewThreadForm);
-              }
+              // No need to check for token - just show the form
+              setShowNewThreadForm(!showNewThreadForm);
             }}
           >
             {showNewThreadForm ? 'Cancel' : 'New Thread'}

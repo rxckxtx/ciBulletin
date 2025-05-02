@@ -141,13 +141,7 @@ const EventForm = ({ onSubmit, onCancel }) => {
         eventFormData.append('image', image);
       }
 
-      // Check if user is authenticated
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('You must be logged in to create events. Please log in and try again.');
-        setLoading(false);
-        return;
-      }
+      // No need to check for token - authentication is handled by HttpOnly cookies
 
       // Submit the form
       await onSubmit(eventFormData);
