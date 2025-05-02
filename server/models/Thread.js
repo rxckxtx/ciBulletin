@@ -44,4 +44,5 @@ const ThreadSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Thread', ThreadSchema);
+// Check if model already exists to prevent overwriting
+module.exports = mongoose.models.Thread || mongoose.model('Thread', ThreadSchema);

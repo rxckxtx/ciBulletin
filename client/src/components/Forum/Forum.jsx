@@ -23,7 +23,6 @@ const Forum = () => {
 
     // Add a focus event listener to refresh threads when returning to this page
     const handleFocus = () => {
-      console.log('Window focused, refreshing threads');
       loadThreads(category);
     };
 
@@ -42,7 +41,6 @@ const Forum = () => {
       setThreads(data || []);
       setError('');
     } catch (err) {
-      console.error('Error loading threads:', err);
       setError('Failed to load discussion threads');
       setThreads([]); // Set empty array on error
     } finally {
@@ -80,24 +78,11 @@ const Forum = () => {
       setNewThread({ title: '', content: '', category: 'general' });
       setShowNewThreadForm(false);
     } catch (err) {
-      console.error('Error creating thread:', err);
       setError('Failed to create new thread');
     }
   };
 
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-
-  const categories = [
-    { id: 'all', name: 'All' },
-    { id: 'general', name: 'General' },
-    { id: 'academic', name: 'Academic' },
-    { id: 'clubs', name: 'Clubs' },
-    { id: 'events', name: 'Events' },
-    { id: 'questions', name: 'Questions' }
-  ];
+  // Categories are defined directly in the UI
 
   return (
     <div className="forum-container">

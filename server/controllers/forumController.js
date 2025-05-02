@@ -2,67 +2,108 @@ const Thread = require('../models/Thread');
 const User = require('../models/User');
 const Forum = require('../models/Forum');
 const Topic = require('../models/Topic');
+const { handleError, createError } = require('../utils/errorHandler');
 
 // Get all threads or filter by category
 exports.getAllThreads = async (req, res) => {
   try {
+    console.log('getAllThreads called with query:', req.query);
     const { category } = req.query;
     const filter = category ? { category } : {};
+
+    console.log('Applying filter:', filter);
+
+    // Check if Thread model exists
+    if (!Thread) {
+      console.error('Thread model is not defined');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
 
     // First get threads without posts content to save bandwidth
     let threads = await Thread.find(filter)
       .sort({ createdAt: -1 })
-      .populate('user', 'username avatar');
+      .populate('user', 'name avatar')
+      .lean() // Use lean() for better performance
+      .exec(); // Use exec() to get a true promise
+
+    // Add username field for backward compatibility
+    threads = threads.map(thread => {
+      if (thread.user && thread.user.name) {
+        thread.user.username = thread.user.name;
+      }
+      return thread;
+    });
+
+    console.log(`Found ${threads.length} threads`);
 
     // Transform the threads to include post count but exclude post content
     threads = threads.map(thread => {
-      const threadObj = thread.toObject();
-      threadObj.postCount = thread.posts.length;
+      // Add post count
+      thread.postCount = thread.posts ? thread.posts.length : 0;
       // Remove the posts array to save bandwidth
-      delete threadObj.posts;
-      return threadObj;
+      delete thread.posts;
+      return thread;
     });
 
+    // Send the response without cache headers
     res.json(threads);
   } catch (error) {
-    console.error('Error fetching threads:', error);
-    res.status(500).json({ message: 'Server error' });
+    // Use centralized error handler
+    return handleError(error, res, 'getAllThreads');
   }
 };
 
 // Get thread by ID
 exports.getThreadById = async (req, res) => {
   try {
+    console.log('getThreadById called with params:', req.params);
+
     // Check if ID is valid
     if (!req.params.id || req.params.id === 'undefined') {
+      console.log('Invalid thread ID provided');
       return res.status(400).json({ message: 'Invalid thread ID' });
     }
 
+    console.log('Looking for thread with ID:', req.params.id);
     const thread = await Thread.findById(req.params.id)
-      .populate('user', 'username avatar')
-      .populate('posts.user', 'username avatar');
+      .populate('user', 'name avatar')
+      .populate('posts.user', 'name avatar');
 
     if (!thread) {
+      console.log('Thread not found with ID:', req.params.id);
       return res.status(404).json({ message: 'Thread not found' });
     }
 
-    // Increment view count only if this is a direct request (not a refresh)
-    // Check if the request has a header indicating it's a refresh
-    if (!req.headers['x-refresh-request']) {
-      thread.views += 1;
-      await thread.save();
+    console.log('Thread found:', thread.title);
+
+    // Debug log to see what user data is being populated
+    console.log('Thread user data:', thread.user);
+
+    // Add username field for backward compatibility
+    if (thread.user && thread.user.name) {
+      thread.user.username = thread.user.name;
     }
+
+    // Also add username to post users
+    if (thread.posts && thread.posts.length > 0) {
+      thread.posts.forEach(post => {
+        if (post.user && post.user.name) {
+          post.user.username = post.user.name;
+        }
+      });
+    }
+
+    // We're no longer using the x-refresh-request header to avoid CORS issues
+    // Instead, we'll increment the view count for all requests
+    // This might lead to slightly inflated view counts, but it's better than CORS errors
+    console.log('Incrementing view count for thread:', thread._id);
+    thread.views += 1;
+    await thread.save();
 
     res.json(thread);
   } catch (error) {
-    console.error('Error fetching thread:', error);
-
-    // Check if it's a CastError (invalid ObjectId)
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid thread ID format' });
-    }
-
-    res.status(500).json({ message: 'Server error' });
+    // Use centralized error handler
+    return handleError(error, res, 'getThreadById');
   }
 };
 
@@ -87,12 +128,11 @@ exports.createThread = async (req, res) => {
     const savedThread = await newThread.save();
 
     // Populate user info before sending response
-    await savedThread.populate('user', 'username avatar');
+    await savedThread.populate('user', 'name avatar');
 
     res.status(201).json(savedThread);
   } catch (error) {
-    console.error('Error creating thread:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'createThread');
   }
 };
 
@@ -117,13 +157,12 @@ exports.addPost = async (req, res) => {
     const updatedThread = await thread.save();
 
     // Populate user info before sending response
-    await updatedThread.populate('user', 'username avatar');
-    await updatedThread.populate('posts.user', 'username avatar');
+    await updatedThread.populate('user', 'name avatar');
+    await updatedThread.populate('posts.user', 'name avatar');
 
     res.json(updatedThread);
   } catch (error) {
-    console.error('Error adding post:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'addPost');
   }
 };
 
@@ -145,8 +184,7 @@ exports.deleteThread = async (req, res) => {
 
     res.json({ message: 'Thread deleted successfully' });
   } catch (error) {
-    console.error('Error deleting thread:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'deleteThread');
   }
 };
 
@@ -180,24 +218,22 @@ exports.deletePost = async (req, res) => {
     );
 
     // Populate user info before sending response
-    await updatedThread.populate('user', 'username avatar');
-    await updatedThread.populate('posts.user', 'username avatar');
+    await updatedThread.populate('user', 'name avatar');
+    await updatedThread.populate('posts.user', 'name avatar');
 
     res.json(updatedThread);
   } catch (error) {
-    console.error('Error deleting post:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'deletePost');
   }
 };
 
 // Get all forums
-exports.getForums = async (req, res) => {
+exports.getForums = async (_req, res) => {
   try {
     const forums = await Forum.find().sort({ category: 1, name: 1 });
     res.json(forums);
   } catch (error) {
-    console.error('Error fetching forums:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'getForums');
   }
 };
 
@@ -212,8 +248,7 @@ exports.getForumById = async (req, res) => {
 
     res.json(forum);
   } catch (error) {
-    console.error('Error fetching forum:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'getForumById');
   }
 };
 
@@ -237,8 +272,7 @@ exports.createForum = async (req, res) => {
     const savedForum = await newForum.save();
     res.status(201).json(savedForum);
   } catch (error) {
-    console.error('Error creating forum:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'createForum');
   }
 };
 
@@ -257,8 +291,7 @@ exports.updateForum = async (req, res) => {
 
     res.json(forum);
   } catch (error) {
-    console.error('Error updating forum:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'updateForum');
   }
 };
 
@@ -279,7 +312,6 @@ exports.deleteForum = async (req, res) => {
 
     res.json({ message: 'Forum deleted successfully' });
   } catch (error) {
-    console.error('Error deleting forum:', error);
-    res.status(500).json({ message: 'Server error' });
+    return handleError(error, res, 'deleteForum');
   }
 };

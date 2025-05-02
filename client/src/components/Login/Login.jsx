@@ -25,14 +25,22 @@ const Login = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      // Testing without backend, uncomment this:
-      // localStorage.setItem('token', 'test-token');
-      // onLoginSuccess();
-      
-      // Backend integrated testing:
       const userData = await login({ email, password });
-      localStorage.setItem('token', userData.token);
-      onLoginSuccess();
+
+      // Return user data with isAuthenticated flag
+      // If not, we'll consider it successful if we get a response with user data
+      if (userData && (userData.isAuthenticated || userData._id)) {
+        // Store user ID and role in localStorage for client-side access control
+        if (userData._id) {
+          localStorage.setItem('userId', userData._id);
+        }
+        if (userData.role) {
+          localStorage.setItem('userRole', userData.role);
+        }
+        onLoginSuccess();
+      } else {
+        setError('Login failed. Please try again.');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
@@ -45,9 +53,9 @@ const Login = ({ onLoginSuccess }) => {
       <div className="login-card">
         <h2 className="login-title">ciBulletin</h2>
         <p className="login-subtitle">Sign in to your account</p>
-        
+
         {error && <div className="login-error">{error}</div>}
-        
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -61,7 +69,7 @@ const Login = ({ onLoginSuccess }) => {
               placeholder="Enter your email"
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -74,12 +82,12 @@ const Login = ({ onLoginSuccess }) => {
               placeholder="Enter your password"
             />
           </div>
-          
+
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        
+
         <div className="login-footer">
           <p>Don't have an account? <span className="login-link" onClick={() => navigate('/register')}>Register</span></p>
         </div>

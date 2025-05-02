@@ -34,6 +34,7 @@ server/node_modules
 run-server.bat
 start-server.bat
 start-server.js
+/server/scripts
 
 # SSL certificates
 /ssl

@@ -4,7 +4,11 @@ const forumController = require('../controllers/forumController');
 const auth = require('../middleware/auth');
 
 // GET all threads or filter by category
-router.get('/', forumController.getAllThreads);
+router.get('/', (req, res, next) => {
+  console.log('Forum route: GET / called');
+  console.log('Query params:', req.query);
+  next();
+}, forumController.getAllThreads);
 
 // GET thread by ID
 router.get('/:id', forumController.getThreadById);

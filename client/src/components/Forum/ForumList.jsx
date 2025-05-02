@@ -79,7 +79,7 @@ const ForumList = () => {
                 </Link>
                 <div className="thread-meta">
                   <span className="thread-category">{thread.category}</span>
-                  <span className="thread-author">Posted by {thread.user?.username || 'Unknown'}</span>
+                  <span className="thread-author">Posted by {thread.user?.name || thread.user?.username || 'Unknown'}</span>
                   <span className="thread-date">{formatDate(thread.createdAt)}</span>
                   <span className="thread-stats">
                     <span className="thread-replies">{typeof thread.postCount === 'number' ? thread.postCount : (thread.posts?.length || 0)} replies</span>

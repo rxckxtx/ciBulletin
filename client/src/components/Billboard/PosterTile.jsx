@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import React, { useState } from 'react';
 
 // Helper function to get theme color
 const getThemeColor = (theme) => {
@@ -15,32 +14,14 @@ const getThemeColor = (theme) => {
 };
 
 const PosterTile = ({ announcement, onDelete }) => {
-  const [currentUser, setCurrentUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [expandedImage, setExpandedImage] = useState(false);
 
-  // Get current user from token
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (decoded.user) {
-          setCurrentUser(decoded.user);
-        }
-      } catch (err) {
-        console.error('Error decoding token:', err);
-      }
-    }
-  }, []);
+  // For simplicity, always allow delete button to show
+  // The server will handle the authorization check
+  const canDelete = true;
 
-  // Check if user can delete this event
-  const canDelete = currentUser && (
-    // User is the creator of the event
-    (announcement.user && announcement.user._id === currentUser.id) ||
-    // Or user is an admin
-    currentUser.role === 'admin'
-  );
+  // No debug info needed in production
 
   // Determine if event is archived (past date)
   const isArchived = announcement.isArchived;
@@ -81,6 +62,7 @@ const PosterTile = ({ announcement, onDelete }) => {
         ${urgentPulseClass}
         ${isArchived ? 'opacity-75' : ''}
         hover:shadow-md`}
+      data-can-delete={String(!!canDelete)}
     >
       {isArchived && (
         <div className="bg-gray-600 text-white text-xs font-medium py-1 px-2 text-center">
@@ -128,11 +110,21 @@ const PosterTile = ({ announcement, onDelete }) => {
               {announcement.type}
             </div>
           )}
+
+          {/* Display who posted the event */}
+          <div className="flex items-center mt-2 pt-2 border-t border-gray-100">
+            <span className="mr-2">👤</span> Posted by {
+              announcement.user && typeof announcement.user === 'object'
+                ? (announcement.user.name || announcement.user.username || 'Unknown')
+                : 'Unknown'
+            }
+          </div>
         </div>
 
-        {canDelete && (
-          <div className="mt-4 border-t pt-3 border-gray-100">
-            {!showDeleteConfirm ? (
+        {/* Always render the delete section, but conditionally show the button */}
+        <div className="mt-4 border-t pt-3 border-gray-100">
+          {canDelete ? (
+            !showDeleteConfirm ? (
               <button
                 className="text-red-500 hover:text-red-700 transition-colors"
                 onClick={handleDeleteClick}
@@ -158,9 +150,14 @@ const PosterTile = ({ announcement, onDelete }) => {
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            )
+          ) : (
+            <div className="text-xs text-gray-400">
+              {/* Spacer div */}
+              &nbsp;
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Expanded image modal */}

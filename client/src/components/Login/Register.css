@@ -92,6 +92,56 @@ input:focus {
   margin-bottom: 1rem;
 }
 
+.input-error {
+  color: #ff0000;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+/* Password strength meter */
+.password-strength {
+  margin-top: 0.5rem;
+}
+
+.strength-meter {
+  height: 5px;
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  margin-bottom: 0.3rem;
+}
+
+.strength-meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.strength-0 {
+  background-color: #ff4d4d; /* Very Weak - Red */
+}
+
+.strength-1 {
+  background-color: #ffa64d; /* Weak - Orange */
+}
+
+.strength-2 {
+  background-color: #ffff4d; /* Fair - Yellow */
+}
+
+.strength-3 {
+  background-color: #4dff4d; /* Good - Light Green */
+}
+
+.strength-4 {
+  background-color: #00cc00; /* Strong - Green */
+}
+
+.strength-text {
+  font-size: 0.8rem;
+  color: #666666;
+  text-align: right;
+}
+
 /* Footer styling */
 .register-footer {
   margin-top: 1.5rem;

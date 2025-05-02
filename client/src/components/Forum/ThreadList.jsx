@@ -9,10 +9,10 @@ const ThreadList = ({ threads }) => {
   return (
     <div className="thread-list">
       {threads.map(thread => {
-        // Use _id instead of id, and add a fallback
+        // Use _id instead of id (MongoDB fix)
         const threadId = thread._id || thread.id;
-        // Get the username from the user object or use a fallback
-        const authorName = thread.user?.username || thread.author || 'Unknown';
+        // Get the username from the user object or use Unknown
+        const authorName = thread.user?.name || thread.user?.username || thread.author || 'Unknown';
 
         return (
           <div key={threadId} className="thread-item">

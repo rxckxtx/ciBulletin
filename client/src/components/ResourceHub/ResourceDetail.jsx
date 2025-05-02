@@ -10,6 +10,7 @@ const ResourceDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -20,13 +21,17 @@ const ResourceDetail = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       const data = await fetchResourceById(id);
       setResource(data);
-      
+
       // Check if current user is the owner
       const userId = localStorage.getItem('userId');
       setIsOwner(userId && data.user && userId === data.user._id);
+
+      // Check if current user is an admin
+      const userRole = localStorage.getItem('userRole');
+      setIsAdmin(userRole === 'admin');
     } catch (err) {
       console.error('Error fetching resource:', err);
       setError('Failed to load resource. It may have been removed or you do not have permission to view it.');
@@ -66,10 +71,6 @@ const ResourceDetail = () => {
         return 'fa-file-alt';
       case 'image':
         return 'fa-file-image';
-      case 'video':
-        return 'fa-file-video';
-      case 'audio':
-        return 'fa-file-audio';
       default:
         return 'fa-file';
     }
@@ -109,9 +110,9 @@ const ResourceDetail = () => {
         <Link to="/resources" className="back-link">
           <i className="fas fa-arrow-left"></i> Back to Resources
         </Link>
-        
+
         <h1 className="resource-detail-title">{resource.title}</h1>
-        
+
         <div className="resource-detail-meta">
           <span className="resource-detail-category">{resource.category}</span>
           <span className="resource-detail-type">
@@ -125,12 +126,12 @@ const ResourceDetail = () => {
           </span>
         </div>
       </div>
-      
+
       <div className="resource-detail-content">
         <div className="resource-detail-description">
           <h3>Description</h3>
           <p>{resource.description}</p>
-          
+
           {resource.tags && resource.tags.length > 0 && (
             <div className="resource-detail-tags">
               <h3>Tags</h3>
@@ -142,64 +143,66 @@ const ResourceDetail = () => {
             </div>
           )}
         </div>
-        
+
         <div className="resource-detail-sidebar">
           <div className="resource-detail-user">
             <h3>Uploaded by</h3>
             <div className="user-info">
               {resource.user?.avatar && (
-                <img 
-                  src={resource.user.avatar} 
-                  alt={resource.user.name} 
-                  className="user-avatar" 
+                <img
+                  src={resource.user.avatar}
+                  alt={resource.user.name}
+                  className="user-avatar"
                 />
               )}
               <span className="user-name">{resource.user?.name || 'Unknown'}</span>
             </div>
           </div>
-          
+
           <div className="resource-detail-actions">
-            <button 
+            <button
               className="download-button"
               onClick={handleDownload}
             >
               <i className="fas fa-download"></i> Download
             </button>
-            
+
+            {/* Show edit button only for owner (removed button for now because edit is not working)
             {isOwner && (
-              <>
-                <Link 
-                  to={`/resources/edit/${resource._id}`}
-                  className="edit-button"
-                >
-                  <i className="fas fa-edit"></i> Edit
-                </Link>
-                
-                <button 
-                  className="delete-button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  <i className="fas fa-trash-alt"></i> Delete
-                </button>
-              </>
+              <Link
+                to={`/resources/edit/${resource._id}`}
+                className="edit-button"
+              >
+                <i className="fas fa-edit"></i> Edit
+              </Link>
+            )} */}
+
+            {/* Show delete button for both owner and admin */}
+            {(isOwner || isAdmin) && (
+              <button
+                className="delete-button"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <i className="fas fa-trash-alt"></i> Delete
+              </button>
             )}
           </div>
         </div>
       </div>
-      
+
       {showDeleteConfirm && (
         <div className="delete-confirmation-modal">
           <div className="delete-confirmation-content">
             <h3>Confirm Deletion</h3>
             <p>Are you sure you want to delete this resource? This action cannot be undone.</p>
             <div className="delete-confirmation-actions">
-              <button 
+              <button
                 className="cancel-button"
                 onClick={() => setShowDeleteConfirm(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="confirm-delete-button"
                 onClick={handleDelete}
               >

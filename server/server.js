@@ -5,87 +5,129 @@ const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+const csrf = require('csurf');
 const fs = require('fs');
 const http = require('http');
-const https = require('https');
+
+// Load environment variables
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+// Validate environment variables
+const validateEnv = require('./utils/validateEnv');
+if (!validateEnv()) {
+  console.error('Environment validation failed. Please check your configuration.');
+  // Continue execution but log the warning
+}
 
 // Initialize express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // Default to localhost:3000 in development
+  credentials: true, // Allow cookies to be sent with requests
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-csrf-token',
+    'Cache-Control',
+    'X-Requested-With',
+    'Accept',
+    'x-refresh-request' // Added this header for thread view refresh
+  ],
+  exposedHeaders: ['Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// Enable pre-flight for all routes
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// HTTPS redirect middleware for production
-if (process.env.NODE_ENV === 'production' && process.env.ENABLE_HTTPS_REDIRECT === 'true') {
-  app.use((req, res, next) => {
-    // Check if it's a secure connection
-    if (!req.secure && req.headers['x-forwarded-proto'] !== 'https') {
-      // Redirect to HTTPS
-      const httpsUrl = `https://${req.hostname}${req.originalUrl}`;
-      return res.redirect(301, httpsUrl);
+// Setup CSRF protection
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  }
+});
+
+// Apply CSRF protection to state-changing routes
+// We'll apply it selectively to routes that need it
+
+// Apply security headers in all environments
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: process.env.NODE_ENV === 'production'
+        ? ["'self'"]
+        : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", process.env.CORS_ORIGIN || '*'],
+      frameSrc: ["'self'"],
+      objectSrc: ["'none'"]
     }
-    next();
-  });
-}
+  },
+  // For single page applications
+  crossOriginEmbedderPolicy: false,
+  // Set X-XSS-Protection header
+  xssFilter: true,
+  // Prevent MIME type sniffing
+  noSniff: true,
+  // Set X-Frame-Options to prevent clickjacking
+  frameguard: { action: 'sameorigin' }
+}));
 
-// Production optimizations
+// Production-specific optimizations
 if (process.env.NODE_ENV === 'production') {
-  // Security headers
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", 'https://api.example.com'] // Adjust before deployment
-      }
-    },
-    // For single page applications
-    crossOriginEmbedderPolicy: false
-  }));
 
   // Compression
   app.use(compression());
 
   // Rate limiting
   const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes by default
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // Limit each IP to 100 requests per windowMs by default
     standardHeaders: true,
     legacyHeaders: false,
-    message: 'Too many requests from this IP, please try again after 15 minutes'
+    message: 'Too many requests from this IP, please try again later',
+    skip: (req) => {
+      // Skip rate limiting for certain paths if needed
+      return req.path === '/api/health' || req.path === '/api/status';
+    }
   });
 
   // Apply rate limiting to API routes
   app.use('/api/', apiLimiter);
 
-  // Add request logging
+  // Add request logging (minimal in production)
   app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
       const duration = Date.now() - start;
-      console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+      // Only log slow requests (>500ms) or error responses
+      if (duration > 500 || res.statusCode >= 400) {
+        process.stdout.write(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms\n`);
+      }
     });
     next();
   });
 }
 
-// MongoDB Connection Test (Delete later)
-mongoose.connection.once('open', () => {
-  console.log('Connected to MongoDB! N0ICE');
-});
-
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .then(() => process.stdout.write('MongoDB connected successfully\n'))
+  .catch((err) => process.stderr.write(`MongoDB connection error: ${err.message}\n`));
 
 // API Routes
 // Define routes
@@ -131,21 +173,44 @@ app.get('/', (_req, res) => {
   res.send('&#128526 ciBulletin backend is running!');
 });
 
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  const healthcheck = {
+    uptime: process.uptime(),
+    message: 'OK',
+    timestamp: Date.now()
+  };
+
+  try {
+    // Check database connection
+    if (mongoose.connection.readyState === 1) {
+      healthcheck.database = 'Connected';
+    } else {
+      healthcheck.database = 'Disconnected';
+      healthcheck.message = 'WARNING';
+    }
+
+    res.status(200).json(healthcheck);
+  } catch (error) {
+    // Use error handler with custom status code
+    error.statusCode = 503;
+    error.clientMessage = 'Health check failed';
+    return handleError(error, res, 'health-check');
+  }
+});
+
+// CSRF token endpoint
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+// Import error handler utility
+const { handleError } = require('./utils/errorHandler');
+
 // Global error handler
 app.use((err, _req, res, _next) => {
-  console.error(err.stack);
-
-  // Don't expose error details in production
-  const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production'
-    ? 'An error occurred'
-    : err.message || 'An error occurred';
-
-  res.status(statusCode).json({
-    status: 'error',
-    message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
-  });
+  // Use centralized error handler
+  handleError(err, res, 'global');
 });
 
 // Handle 404 errors
@@ -159,28 +224,19 @@ app.use((_req, res) => {
 // Start HTTP server
 const httpServer = http.createServer(app);
 httpServer.listen(PORT, () => {
-  console.log(`HTTP Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  process.stdout.write(`HTTP Server running on port ${PORT}\n`);
+  process.stdout.write(`Environment: ${process.env.NODE_ENV || 'development'}\n`);
 });
 
-// Start HTTPS server if in production or if SSL_ENABLED is true
-if (process.env.NODE_ENV === 'production' || process.env.SSL_ENABLED === 'true') {
-  try {
-    // SSL certificate options
-    const httpsOptions = {
-      key: fs.readFileSync(path.join(__dirname, '../ssl/private.key')),
-      cert: fs.readFileSync(path.join(__dirname, '../ssl/certificate.crt'))
-    };
-
-    // Create HTTPS server
-    const httpsServer = https.createServer(httpsOptions, app);
-    const HTTPS_PORT = process.env.HTTPS_PORT || 443;
-
-    httpsServer.listen(HTTPS_PORT, () => {
-      console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
+// Add graceful shutdown for HTTP server
+process.on('SIGTERM', () => {
+  process.stdout.write('SIGTERM signal received: closing HTTP server\n');
+  httpServer.close(() => {
+    process.stdout.write('HTTP server closed\n');
+    // Close database connection
+    mongoose.connection.close(false, () => {
+      process.stdout.write('MongoDB connection closed\n');
+      process.exit(0);
     });
-  } catch (error) {
-    console.error('Failed to start HTTPS server:', error.message);
-    console.log('Continuing with HTTP server only');
-  }
-}
+  });
+});

@@ -39,6 +39,7 @@ const CategoryPage = () => {
       loadCategoryThreads();
     };
 
+    // Really cool method that allows for function exec when window is focused
     window.addEventListener('focus', handleFocus);
 
     // Clean up the event listener when component unmounts

@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
   }
 });
 
-// Create upload middleware
+// Create upload middleware with enhanced security
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -24,67 +24,119 @@ const upload = multer({
       return cb(null, true);
     }
 
+    // Validate file type
     const filetypes = /jpeg|jpg|png/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
 
+    // Check both mimetype and extension to ensure file type integrity
     if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error('Only JPEG, JPG, and PNG files are allowed'));
+
+    // Reject file with clear error message
+    cb(new Error('Only JPEG, JPG, and PNG image files are allowed'));
   }
 }).single('image');
 
-// Create event with image upload
+// Create event with JSON data
 exports.createEvent = async (req, res) => {
-  upload(req, res, async (err) => {
-    if (err instanceof multer.MulterError) {
-      console.error('Multer error:', err);
-      return res.status(400).json({ message: `Upload error: ${err.message}` });
-    } else if (err) {
-      console.error('Other error:', err);
-      return res.status(400).json({ message: err.message });
-    }
+  console.log('Event creation endpoint called');
+  console.log('Request headers:', req.headers);
+  console.log('Request body:', req.body);
 
-    try {
-      console.log('Request body:', req.body);
-      console.log('User object:', req.user); // Log the user object to debug
+  try {
+    // Extract data from request body
+    const { title, location, date, group, type, theme, urgent, image, size } = req.body;
 
-      const { title, location, date, group, type, theme, urgent } = req.body;
-      let size = { width: 1, height: 1 };
+    console.log('Extracted fields:');
+    console.log('title:', title);
+    console.log('location:', location);
+    console.log('date:', date);
+    console.log('group:', group);
+    console.log('type:', type);
+    console.log('theme:', theme);
+    console.log('urgent:', urgent);
+    console.log('image:', image);
+    console.log('size:', size);
 
-      if (req.body.size) {
-        try {
-          size = JSON.parse(req.body.size);
-        } catch (e) {
-          console.error('Error parsing size:', e);
-        }
-      }
+    // Validate required fields directly
+    const missingFields = [];
+    if (!title) missingFields.push('title');
+    if (!location) missingFields.push('location');
+    if (!date) missingFields.push('date');
+    if (!group) missingFields.push('group');
 
-      // For development purposes, use a default user ID if not authenticated
-      // In production, you should require authentication
-      const userId = req.user?.id || '64f5b7d5e85b0e1b3c3f5b7d'; // Replace with a valid ObjectId from your database
-
-      const newEvent = new Event({
-        title,
-        location,
-        date,
-        group,
-        type: type || 'event',
-        theme: theme || 'asi',
-        urgent: urgent === 'true',
-        size,
-        image: req.file ? `/uploads/posters/${req.file.filename}` : null,
-        user: userId
+    if (missingFields.length > 0) {
+      console.error(`Missing required fields: ${missingFields.join(', ')}`);
+      return res.status(400).json({
+        message: `Missing required fields: ${missingFields.join(', ')}. Please ensure title, location, date, and group are provided.`
       });
-
-      const savedEvent = await newEvent.save();
-      res.status(201).json(savedEvent);
-    } catch (error) {
-      console.error('Error creating event:', error);
-      res.status(500).json({ message: 'Server error: ' + error.message });
     }
-  });
+
+    // Handle size
+    let sizeObj = size || { width: 1, height: 1 };
+
+    // Check if user is authenticated
+    if (!req.user || !req.user.id) {
+      console.error('Authentication required - User object:', req.user);
+      return res.status(401).json({ message: 'Authentication required to create events' });
+    }
+
+    const userId = req.user.id;
+
+    // Validate date format
+    let parsedDate;
+    try {
+      parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date');
+      }
+      console.log('Parsed date:', parsedDate);
+    } catch (e) {
+      console.error('Error parsing date:', date, e);
+      return res.status(400).json({ message: `Invalid date format: ${date}. Please provide a valid date.` });
+    }
+
+    // Create new event object
+    const newEvent = new Event({
+      title,
+      location,
+      date: parsedDate,
+      group,
+      type: type || 'event',
+      theme: theme || 'asi',
+      urgent: urgent === true || urgent === 'true',
+      size: sizeObj,
+      image: image || null,
+      user: userId
+    });
+
+    console.log('New event object:', newEvent);
+
+    // Save to database
+    const savedEvent = await newEvent.save();
+    console.log('Event saved successfully:', savedEvent);
+
+    // Fetch the saved event with populated user info
+    const populatedEvent = await Event.findById(savedEvent._id)
+      .populate('user', 'name role')
+      .lean();
+
+    console.log('Populated event:', populatedEvent);
+    res.status(201).json(populatedEvent);
+  } catch (error) {
+    console.error('Error creating event:', error);
+
+    // Check for validation errors from Mongoose
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ message: `Validation error: ${validationErrors.join(', ')}` });
+    }
+
+    // Handle other errors
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
 };
 
 // Get all events
@@ -123,7 +175,9 @@ exports.getEvents = async (req, res) => {
 // Get event by ID
 exports.getEventById = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const event = await Event.findById(req.params.id)
+      .populate('user', 'name role') // Populate user info
+      .lean(); // Convert to plain JS object
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
@@ -143,7 +197,7 @@ exports.updateEvent = async (req, res) => {
       req.params.id,
       { ...req.body, updatedAt: Date.now() },
       { new: true }
-    );
+    ).populate('user', 'name role'); // Populate user info
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
@@ -213,12 +267,14 @@ exports.checkDailyEventLimit = async (req, res) => {
 };
 
 // Get upcoming events
-exports.getUpcomingEvents = async (req, res) => {
+exports.getUpcomingEvents = async (_, res) => {
   try {
     const currentDate = new Date();
     const events = await Event.find({
       startDate: { $gte: currentDate }
-    }).sort({ startDate: 1 });
+    })
+    .populate('user', 'name role') // Populate user info
+    .sort({ startDate: 1 });
 
     res.json(events);
   } catch (error) {
@@ -228,16 +284,52 @@ exports.getUpcomingEvents = async (req, res) => {
 };
 
 // Get past events
-exports.getPastEvents = async (req, res) => {
+exports.getPastEvents = async (_, res) => {
   try {
     const currentDate = new Date();
     const events = await Event.find({
       endDate: { $lt: currentDate }
-    }).sort({ startDate: -1 });
+    })
+    .populate('user', 'name role') // Populate user info
+    .sort({ startDate: -1 });
 
     res.json(events);
   } catch (error) {
     console.error('Error fetching past events:', error);
     res.status(500).json({ message: 'Server error' });
   }
+};
+
+// Upload event image only
+exports.uploadEventImage = async (req, res) => {
+  console.log('Image upload endpoint called');
+
+  upload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      console.error('Multer error:', err);
+      return res.status(400).json({ message: `Upload error: ${err.message}` });
+    } else if (err) {
+      console.error('Other error:', err);
+      return res.status(400).json({ message: err.message });
+    }
+
+    try {
+      // Check if file was uploaded
+      if (!req.file) {
+        return res.status(400).json({ message: 'No image file provided' });
+      }
+
+      // Return the file path
+      const imagePath = `/uploads/posters/${req.file.filename}`;
+      console.log('Image uploaded successfully:', imagePath);
+
+      res.status(200).json({
+        message: 'Image uploaded successfully',
+        imagePath
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+  });
 };

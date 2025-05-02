@@ -27,12 +27,23 @@ const DashboardForum = () => {
   const loadThreads = async () => {
     try {
       setLoading(true);
+      setError(''); // Clear any previous errors
+      console.log('Dashboard: Fetching threads...');
+
       const data = await fetchThreads();
+
+      console.log('Dashboard: Threads data received:', data);
+
+      if (Array.isArray(data) && data.length === 0) {
+        console.log('No threads found');
+      }
+
       setThreads(data || []);
-      setError('');
     } catch (err) {
-      console.error('Error loading threads in dashboard:', err);
-      setError('Failed to load discussion threads');
+      console.error('Unexpected error loading threads in dashboard:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load discussion threads';
+      console.error('Error details:', errorMessage);
+      setError(`Failed to load discussion threads: ${errorMessage}`);
       setThreads([]); // Set empty array on error
     } finally {
       setLoading(false);
@@ -90,10 +101,10 @@ const DashboardForum = () => {
           ) : (
             <div className="divide-y divide-gray-100">
               {threads.slice(0, 5).map(thread => {
-                // Use _id instead of id, and add a fallback
+                // Use _id instead of id, (MongoDB fix)
                 const threadId = thread._id || thread.id;
-                // Get the username from the user object or use a fallback
-                const authorName = thread.user?.username || thread.author || 'Unknown';
+                // Get the username from the user object, otherwise Unknown
+                const authorName = thread.user?.name || thread.user?.username || thread.author || 'Unknown';
 
                 return (
                   <div key={threadId} className="p-4 hover:bg-gray-50 transition-colors">

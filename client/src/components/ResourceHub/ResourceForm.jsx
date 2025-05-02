@@ -51,7 +51,7 @@ const ResourceForm = () => {
         file: null // Can't pre-fill file input
       });
       
-      // Set preview if it's an image
+      // Set preview if it's an image (preview not working at this current state)
       if (resource.fileType === 'image') {
         setPreview(resource.fileUrl);
       }

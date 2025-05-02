@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchThreadById, addPost, deleteThread, deleteForumPost } from '../../services/api';
 import './ThreadDetail.css';
-import { jwtDecode } from 'jwt-decode';
 
 const ThreadDetail = () => {
   const [thread, setThread] = useState(null);
@@ -16,26 +15,63 @@ const ThreadDetail = () => {
   // Track if this is the initial load or a refresh
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Get current user ID from token
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        console.log('Decoded token:', decoded);
-        if (decoded.user && decoded.user.id) {
-          setCurrentUserId(decoded.user.id);
-          console.log('Current user ID set to:', decoded.user.id);
-        }
-      } catch (err) {
-        console.error('Error decoding token:', err);
+  // Define loadThread function first using useCallback
+  const loadThread = useCallback(async (_countView = false) => {
+    try {
+      setLoading(true);
+      // Make sure id is not undefined before making the API call
+      if (!id) {
+        setError('Invalid thread ID');
+        return;
       }
+
+      try {
+        // Try to fetch the thread without using the custom header first
+        // CORS was having issues with the x-refresh-request header
+        const data = await fetchThreadById(id, false);
+
+        // Debug log to see what data we're getting from the server
+        console.log('Thread data received:', data);
+        console.log('User data:', data.user);
+
+        setThread(data);
+        setError('');
+      } catch (err) {
+        // Error type checks
+        if (err.response) {
+          if (err.response.status === 404) {
+            setError('Thread not found. It may have been deleted.');
+          } else if (err.response.status === 403) {
+            setError('You do not have permission to view this thread.');
+          } else {
+            setError(`Server error: ${err.response.data.message || 'Unknown error'}`);
+          }
+        } else if (err.request) {
+          // The request was made but no response was received
+          setError('Network error. Please check your connection and try again.');
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          setError('Failed to load thread details. Please try again later.');
+        }
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, setLoading, setError, setThread]);
+
+  // Get current user ID and role from localStorage
+  useEffect(() => {
+    // Get user ID from localStorage
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      setCurrentUserId(userId);
     }
   }, []);
 
   useEffect(() => {
     if (id) {
-      // On initial load, we want to count the view
       loadThread(isInitialLoad);
       // After initial load, set to false for future refreshes
       if (isInitialLoad) {
@@ -45,40 +81,7 @@ const ThreadDetail = () => {
       setError('Invalid thread ID');
       setLoading(false);
     }
-  }, [id, isInitialLoad]);
-
-  const loadThread = async (countView = false) => {
-    try {
-      setLoading(true);
-      // Make sure id is not undefined before making the API call
-      if (!id) {
-        setError('Invalid thread ID');
-        return;
-      }
-
-      // Pass isRefresh=true if we don't want to count the view
-      const data = await fetchThreadById(id, !countView);
-      console.log('Thread data loaded:', data);
-
-      // Log the structure of posts for debugging
-      if (data && data.posts) {
-        console.log('Posts structure:', data.posts);
-        data.posts.forEach((post, index) => {
-          console.log(`Post ${index} ID:`, post._id);
-          console.log(`Post ${index} user:`, post.user);
-        });
-      }
-
-      setThread(data);
-      setError('');
-    } catch (err) {
-      console.error('Error loading thread:', err);
-      setError('Failed to load thread details');
-      // Don't set thread to null, keep previous state if any
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, isInitialLoad, loadThread]);
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
@@ -98,7 +101,6 @@ const ThreadDetail = () => {
       setThread(updatedThread);
       setNewPost('');
     } catch (err) {
-      console.error('Error adding post:', err);
       setError('Failed to add your reply');
     }
   };
@@ -112,7 +114,6 @@ const ThreadDetail = () => {
       await deleteThread(id);
       navigate('/forum');
     } catch (err) {
-      console.error('Error deleting thread:', err);
       setError('Failed to delete thread');
     }
   };
@@ -123,17 +124,10 @@ const ThreadDetail = () => {
     }
 
     try {
-      console.log('Attempting to delete post with ID:', postId);
-      console.log('From thread with ID:', id);
-
       const updatedThread = await deleteForumPost(id, postId);
-      console.log('Updated thread after post deletion:', updatedThread);
-
       setThread(updatedThread);
-      setError(''); // Clear any previous errors
+      setError(''); // Clears previous errors
     } catch (err) {
-      console.error('Error deleting post:', err);
-      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.message || 'Failed to delete post');
     }
   };
@@ -169,7 +163,7 @@ const ThreadDetail = () => {
         <h1>{thread.title}</h1>
         <div className="thread-meta">
           <span className="thread-category">{thread.category}</span>
-          <span className="thread-author">Posted by {thread.user?.username || 'Unknown'}</span>
+          <span className="thread-author">Posted by {thread.user?.name || thread.user?.username || 'Unknown'}</span>
           <span className="thread-date">{formatDate(thread.createdAt)}</span>
         </div>
       </div>
@@ -179,25 +173,37 @@ const ThreadDetail = () => {
       </div>
 
       <div className="thread-actions">
-        {/* Show delete button if user is the thread creator */}
+        {/* Show delete button if user is the thread creator or an admin */}
         {currentUserId && thread.user && (
-          (() => {
-            // Handle different possible formats of user ID
-            let threadUserId;
-            if (typeof thread.user === 'string') {
-              threadUserId = thread.user;
-            } else if (thread.user._id) {
-              threadUserId = thread.user._id;
-            }
+          <div>
+            {(() => {
+              // Handle different possible formats of user ID (MongoDB fix)
+              let threadUserId;
+              if (typeof thread.user === 'string') {
+                threadUserId = thread.user;
+              } else if (thread.user._id) {
+                threadUserId = thread.user._id;
+              }
 
-            console.log('Thread user ID:', threadUserId);
-            console.log('Current user ID:', currentUserId);
+              // Check if user is the thread creator
+              const isCreator = threadUserId && currentUserId && threadUserId.toString() === currentUserId.toString();
 
-            // Compare as strings to avoid type mismatches
-            return threadUserId && currentUserId && threadUserId.toString() === currentUserId.toString();
-          })() && (
-            <button onClick={handleDeleteThread} className="delete-btn">Delete Thread</button>
-          )
+              // Get admin status directly from localStorage
+              const userRole = localStorage.getItem('userRole');
+              const isAdminUser = userRole === 'admin';
+
+              // Show delete button if user is creator or admin
+              if (isCreator || isAdminUser) {
+                return (
+                  <button onClick={handleDeleteThread} className="delete-btn">
+                    Delete Thread
+                  </button>
+                );
+              }
+
+              return null;
+            })()}
+          </div>
         )}
       </div>
 
@@ -211,31 +217,44 @@ const ThreadDetail = () => {
             {thread.posts.map(post => (
               <div key={post._id} className="post-item">
                 <div className="post-header">
-                  <span className="post-author">{post.user?.username || 'Unknown'}</span>
+                  <span className="post-author">{post.user?.name || post.user?.username || 'Unknown'}</span>
                   <span className="post-date">{formatDate(post.createdAt)}</span>
                 </div>
                 <div className="post-content">
                   <p>{post.content}</p>
                 </div>
                 <div className="post-actions">
-                  {/* Show delete button if user is the post creator */}
+                  {/* Show delete button if user is the post creator or an admin */}
                   {currentUserId && post.user && (
-                    (() => {
-                      // Handle different possible formats of user ID
-                      let postUserId;
-                      if (typeof post.user === 'string') {
-                        postUserId = post.user;
-                      } else if (post.user && post.user._id) {
-                        postUserId = post.user._id;
-                      }
+                    <div>
+                      {(() => {
+                        // Handle different possible formats of user ID
+                        let postUserId;
+                        if (typeof post.user === 'string') {
+                          postUserId = post.user;
+                        } else if (post.user && post.user._id) {
+                          postUserId = post.user._id;
+                        }
 
-                      console.log(`Post ID ${post._id} - User ID:`, postUserId);
+                        // Check if user is the post creator
+                        const isCreator = postUserId && currentUserId && postUserId.toString() === currentUserId.toString();
 
-                      // Compare as strings to avoid type mismatches
-                      return postUserId && currentUserId && postUserId.toString() === currentUserId.toString();
-                    })() && (
-                      <button onClick={() => handleDeletePost(post._id)} className="delete-btn">Delete Reply</button>
-                    )
+                        // Get admin status directly from localStorage (There is server side authentication) (I just dont have money for cloud storage rn)
+                        const userRole = localStorage.getItem('userRole');
+                        const isAdminUser = userRole === 'admin';
+
+                        // Show delete button if user is creator or admin
+                        if (isCreator || isAdminUser) {
+                          return (
+                            <button onClick={() => handleDeletePost(post._id)} className="delete-btn">
+                              Delete Reply
+                            </button>
+                          );
+                        }
+
+                        return null;
+                      })()}
+                    </div>
                   )}
                 </div>
               </div>

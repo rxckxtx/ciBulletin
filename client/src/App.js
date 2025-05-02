@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import './App.css';
 import Login from './components/Login/Login';
 import Register from './components/Login/Register';
 import Dashboard from './components/Dashboard/Dashboard';
-import './App.css';
 import ForumList from './components/Forum/ForumList';
 import ThreadDetail from './components/Forum/ThreadDetail';
 import NewThread from './components/Forum/NewThread';
@@ -12,6 +12,7 @@ import ResourceHub from './components/ResourceHub/ResourceHub';
 import ResourceDetail from './components/ResourceHub/ResourceDetail';
 import ResourceForm from './components/ResourceHub/ResourceForm';
 import CategoryPage from './components/Forum/CategoryPage';
+import { logout, checkAuthStatus } from './services/api';
 
 const Header = ({ isAuthenticated, handleLogout }) => {
   return (
@@ -38,10 +39,17 @@ function App() {
 
   // Check if user is authenticated on component mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
+    const verifyAuth = async () => {
+      try {
+        // Try to get user profile - this will succeed if the user is authenticated
+        const { isAuthenticated: authStatus } = await checkAuthStatus();
+        setIsAuthenticated(authStatus);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
+    };
+
+    verifyAuth();
   }, []);
 
   // Function to handle successful login
@@ -50,9 +58,23 @@ function App() {
   };
 
   // Function to handle logout
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    try {
+      // Call the logout API function
+      await logout();
+
+      // Clear user data from localStorage
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userRole');
+
+      // Update authentication state
+      setIsAuthenticated(false);
+    } catch (error) {
+      // Still update the state even if there's an error
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userRole');
+      setIsAuthenticated(false);
+    }
   };
 
   return (

@@ -21,10 +21,6 @@ const ResourceCard = ({ resource }) => {
         return 'fa-file-alt';
       case 'image':
         return 'fa-file-image';
-      case 'video':
-        return 'fa-file-video';
-      case 'audio':
-        return 'fa-file-audio';
       default:
         return 'fa-file';
     }
