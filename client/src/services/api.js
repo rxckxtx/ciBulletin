@@ -5,7 +5,10 @@ import createAuthRefreshInterceptor from 'axios-auth-refresh';
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || window.location.origin,
   withCredentials: true, // This allows cookies to be sent with requests
-  timeout: 10000,
+  timeout: 15000, // Increased timeout for slower connections
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 // Add request interceptor
@@ -17,6 +20,12 @@ api.interceptors.request.use(
       // Use Authorization header instead of custom headers to avoid CORS issues
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // For FormData requests, remove Content-Type header to let the browser set it
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   error => {
@@ -35,25 +44,37 @@ api.interceptors.response.use(
 );
 
 // Refresh token logic
-const refreshAuthLogic = failedRequest => {
-  // Skip refresh for login and register endpoints
+const refreshAuthLogic = async (failedRequest) => {
+  // Skip refresh for login, register endpoints, or if explicitly skipped
   const url = failedRequest.response?.config?.url;
-  if (url && (url.includes('/api/auth/login') || url.includes('/api/auth/register'))) {
+  const skipRefresh = failedRequest.response?.config?.headers?.['x-skip-refresh-token'] === 'true';
+
+  if (skipRefresh || (url && (url.includes('/api/auth/login') || url.includes('/api/auth/register')))) {
     return Promise.reject(failedRequest);
   }
 
-  return api.post('/api/auth/refresh-token')
-    .then(response => {
-      // Token is now refreshed in HttpOnly cookie automatically
-      return Promise.resolve();
-    })
-    .catch(error => {
-      // If refresh fails, redirect to login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-      return Promise.reject(error);
-    });
+  try {
+    // Try to refresh the token
+    await api.post('/api/auth/refresh-token');
+
+    // If successful, resolve the promise to retry the original request
+    return Promise.resolve();
+  } catch (error) {
+    console.log('Token refresh failed:', error.message);
+
+    // If refresh fails, redirect to login (but only if not already on login page)
+    if (window.location.pathname !== '/login') {
+      // Clear any stored auth data
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('token');
+
+      // Redirect to login
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  }
 };
 
 // Add refresh interceptor
@@ -138,10 +159,41 @@ export const logout = async () => {
 
 export const checkAuthStatus = async () => {
   try {
-    const response = await api.get('/api/users/profile');
+    // First try to get the user profile
+    const response = await api.get('/api/users/profile', {
+      // Increase timeout for this specific request
+      timeout: 10000,
+      // Don't trigger the refresh token logic for auth checks
+      headers: {
+        'x-skip-refresh-token': 'true'
+      }
+    });
+
+    // If successful, store user ID and role in localStorage for backup
+    if (response.data && response.data._id) {
+      localStorage.setItem('userId', response.data._id);
+      localStorage.setItem('userRole', response.data.role || 'user');
+    }
+
     return { isAuthenticated: true, user: response.data };
   } catch (error) {
-    // Don't trigger the refresh token logic for auth checks
+    console.log('Auth check failed:', error.message);
+
+    // Try to refresh the token if it's an authentication error
+    if (error.response && error.response.status === 401) {
+      try {
+        await api.post('/api/auth/refresh-token');
+        // Try again after refresh
+        const retryResponse = await api.get('/api/users/profile');
+        return { isAuthenticated: true, user: retryResponse.data };
+      } catch (refreshError) {
+        // If refresh fails, clear localStorage
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userRole');
+        return { isAuthenticated: false, user: null };
+      }
+    }
+
     return { isAuthenticated: false, user: null };
   }
 };

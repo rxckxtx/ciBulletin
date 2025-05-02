@@ -112,13 +112,16 @@ if (process.env.NODE_ENV === 'production') {
   // Rate limiting
   const apiLimiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes by default
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // Limit each IP to 100 requests per windowMs by default
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500, // Increased limit to 500 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
     message: 'Too many requests from this IP, please try again later',
     skip: (req) => {
-      // Skip rate limiting for certain paths if needed
-      return req.path === '/api/health' || req.path === '/api/status';
+      // Skip rate limiting for certain paths
+      return req.path === '/api/health' ||
+             req.path === '/api/status' ||
+             req.path === '/api/users/profile' ||
+             req.path === '/api/auth/refresh-token';
     }
   });
 
