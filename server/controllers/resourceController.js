@@ -3,7 +3,13 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const validator = require('validator');
-const fileType = require('file-type');
+let fileType;
+try {
+  fileType = require('file-type');
+} catch (err) {
+  console.error('Warning: file-type module not available, using basic validation');
+  fileType = null;
+}
 
 // Configure storage for file uploads
 const storage = multer.diskStorage({
