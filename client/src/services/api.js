@@ -14,13 +14,6 @@ const api = axios.create({
 // Add request interceptor
 api.interceptors.request.use(
   config => {
-    // Add auth token to all requests if available
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Use Authorization header instead of custom headers to avoid CORS issues
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     // For FormData requests, remove Content-Type header to let the browser set it
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
@@ -67,7 +60,6 @@ const refreshAuthLogic = async (failedRequest) => {
       // Clear any stored auth data
       localStorage.removeItem('userId');
       localStorage.removeItem('userRole');
-      localStorage.removeItem('token');
 
       // Redirect to login
       window.location.href = '/login';

@@ -24,6 +24,10 @@ if (!validateEnv()) {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy - needed for Render and other hosting platforms
+// This allows the app to trust the X-Forwarded-For header from the proxy
+app.set('trust proxy', true);
+
 // Middleware
 app.use(cors({
   origin: function(origin, callback) {
@@ -70,7 +74,8 @@ const csrfProtection = csrf({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+    path: '/'
   }
 });
 
